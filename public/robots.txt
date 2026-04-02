@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://uchkun.io/sitemap-index.xml

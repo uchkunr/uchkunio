@@ -1,0 +1,154 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { SearchIcon, CalendarIcon, TimerIcon } from "@/components/icons/NavIcons";
+import { getCollection } from "astro:content";
+import { format } from "date-fns";
+import { getReadingTime } from "@/lib/reading-time";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+
+const allPosts = await getCollection("blog");
+const posts = allPosts.sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+
+const allTags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
+---
+
+<BaseLayout title="Blog" description="Technical articles about backend engineering, Node.js, TypeScript, and web development.">
+  <Breadcrumbs items={[{ name: "Blog", href: "/blog" }]} />
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
+    <a
+      href="/"
+      class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
+    >
+      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
+      Back to home
+    </a>
+    <div class="mb-6 sm:mb-10 animate-fade-in">
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Blog</h1>
+      <p class="mt-1.5 sm:mt-2 text-sm sm:text-base text-muted-foreground">
+        Thoughts on backend engineering, architecture, and web development.
+      </p>
+    </div>
+
+    <!-- Search -->
+    <div class="relative mb-4 sm:mb-6 animate-fade-in-delay-1">
+      <div class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+        <SearchIcon client:load />
+      </div>
+      <input
+        id="blog-search"
+        type="text"
+        placeholder="Search posts..."
+        class="w-full rounded-md border border-input bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+    </div>
+
+    <!-- Tags -->
+    <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-6 sm:mb-8 animate-fade-in-delay-1 overflow-x-auto pb-1">
+      {
+        allTags.map((tag) => (
+          <a href={`/blog/tags/${tag}`}>
+            <Badge variant="secondary" className="cursor-pointer hover:bg-accent transition-colors text-[11px] sm:text-xs whitespace-nowrap">
+              #{tag}
+            </Badge>
+          </a>
+        ))
+      }
+    </div>
+
+    <!-- Posts -->
+    <div class="space-y-3 sm:space-y-4 animate-fade-in-delay-2" id="posts-list">
+      {
+        posts.map((post) => (
+          <a
+            href={`/blog/${post.id}`}
+            class="block group"
+            data-title={post.data.title.toLowerCase()}
+            data-tags={post.data.tags.join(" ").toLowerCase()}
+            data-excerpt={post.data.excerpt.toLowerCase()}
+          >
+            <Card className="transition-colors hover:bg-accent/50">
+              <CardContent className="p-3.5 sm:p-5">
+                <h2 class="text-sm sm:text-base font-medium leading-snug group-hover:text-primary transition-colors">
+                  {post.data.title}
+                </h2>
+                <p class="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                  {post.data.excerpt}
+                </p>
+                <div class="mt-2 sm:mt-3 flex flex-wrap items-center gap-2 sm:gap-3">
+                  <div class="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+                    <CalendarIcon client:load />
+                    <time>
+                      {format(new Date(post.data.date), "MMM d, yyyy")}
+                    </time>
+                  </div>
+                  <div class="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+                    <TimerIcon client:load />
+                    {getReadingTime(post.body ?? "")}
+                  </div>
+                  <div class="flex flex-wrap gap-1 sm:gap-1.5">
+                    {post.data.tags.map((tag) => (
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </a>
+        ))
+      }
+    </div>
+
+    <p id="no-results" class="hidden text-center text-muted-foreground py-12">
+      No posts found.
+    </p>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  function initBlogSearch() {
+    var searchInput = document.getElementById("blog-search");
+    var postsList = document.getElementById("posts-list");
+    var noResults = document.getElementById("no-results");
+
+    if (!searchInput || !postsList) return;
+
+    var params = new URLSearchParams(window.location.search);
+    var initialSearch = params.get("search") || "";
+    if (initialSearch) {
+      searchInput.value = initialSearch;
+      filterPosts(initialSearch);
+    }
+
+    searchInput.addEventListener("input", function (e) {
+      filterPosts(e.target.value);
+    });
+
+    function filterPosts(query) {
+      var q = query.toLowerCase().trim();
+      var posts = postsList.querySelectorAll("a[data-title]");
+      var visible = 0;
+
+      posts.forEach(function (post) {
+        var title = post.getAttribute("data-title") || "";
+        var tags = post.getAttribute("data-tags") || "";
+        var excerpt = post.getAttribute("data-excerpt") || "";
+        var match = !q || title.includes(q) || tags.includes(q) || excerpt.includes(q);
+        post.style.display = match ? "" : "none";
+        if (match) visible++;
+      });
+
+      if (noResults) {
+        noResults.classList.toggle("hidden", visible > 0);
+      }
+    }
+  }
+
+  initBlogSearch();
+  document.addEventListener("astro:after-swap", initBlogSearch);
+</script>

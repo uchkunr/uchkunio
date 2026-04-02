@@ -1,0 +1,101 @@
+---
+import { CommandIcon } from "./icons/NavIcons";
+import MobileMenu from "./MobileMenu";
+import { RESUME_URL } from "@/config/site";
+
+const pathname = Astro.url.pathname;
+---
+
+<header
+  class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg"
+>
+  <nav class="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6">
+    <a
+      href="/"
+      class="text-lg font-semibold tracking-tight transition-colors hover:text-muted-foreground"
+    >
+      Uchkun I/O
+    </a>
+
+    <!-- Desktop nav -->
+    <div class="hidden sm:flex items-center gap-1">
+      <a
+        href="/projects"
+        class:list={[
+          "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+          pathname.startsWith("/projects")
+            ? "bg-accent text-accent-foreground"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+        ]}
+      >
+        projects
+      </a>
+      <a
+        href="/blog"
+        class:list={[
+          "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+          pathname.startsWith("/blog")
+            ? "bg-accent text-accent-foreground"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+        ]}
+      >
+        blog
+      </a>
+      <a
+        href={RESUME_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/50"
+      >
+        resume
+      </a>
+      <button
+        id="cmd-k-trigger"
+        aria-label="Command palette"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ml-1"
+      >
+        <CommandIcon client:load />
+      </button>
+      <!-- Desktop theme toggle (navbar) -->
+      <button
+        data-theme-toggle
+        id="navbar-theme-toggle"
+        aria-label="Toggle theme"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ml-1"
+      >
+        <svg class="h-4 w-4 dark:hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+        </svg>
+        <svg class="hidden h-4 w-4 dark:block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4" /><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile nav -->
+    <div class="flex sm:hidden items-center gap-1">
+      <!-- Mobile theme toggle (navbar) -->
+      <button
+        data-theme-toggle
+        id="navbar-theme-toggle-mobile"
+        aria-label="Toggle theme"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+      >
+        <svg class="h-4 w-4 dark:hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+        </svg>
+        <svg class="hidden h-4 w-4 dark:block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4" /><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
+        </svg>
+      </button>
+      <button
+        id="cmd-k-trigger-mobile"
+        aria-label="Command palette"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+      >
+        <CommandIcon client:load />
+      </button>
+      <MobileMenu client:load pathname={pathname} />
+    </div>
+  </nav>
+</header>

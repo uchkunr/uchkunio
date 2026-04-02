@@ -1,0 +1,46 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PROJECTS } from "@/config/site";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+---
+
+<BaseLayout title="Projects" description="Selected projects and systems I've built — from CRMs to real-time notification systems.">
+  <Breadcrumbs items={[{ name: "Projects", href: "/projects" }]} />
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
+    <div class="mb-6 sm:mb-10 animate-fade-in">
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Projects</h1>
+      <p class="mt-1.5 sm:mt-2 text-sm sm:text-base text-muted-foreground">
+        Selected systems and products I've built.
+      </p>
+    </div>
+
+    <div class="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 animate-fade-in-delay-1">
+      {
+        PROJECTS.map((project) => (
+          <Card className="h-full">
+            <CardContent className="p-4 sm:p-5 flex flex-col h-full">
+              <h2 class="text-sm sm:text-base font-semibold leading-snug">{project.name}</h2>
+              <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground flex-1">
+                {project.description}
+              </p>
+              {"metrics" in project && project.metrics && (
+                <p class="mt-2 sm:mt-3 text-[11px] sm:text-xs font-medium text-primary">
+                  {project.metrics}
+                </p>
+              )}
+              <div class="mt-2 sm:mt-3 flex flex-wrap gap-1 sm:gap-1.5">
+                {project.tech.map((t) => (
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 sm:px-2">
+                    {t}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

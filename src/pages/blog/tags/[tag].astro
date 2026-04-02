@@ -1,0 +1,78 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { BackIcon, CalendarIcon, TagIcon } from "@/components/icons/NavIcons";
+import { getCollection } from "astro:content";
+import { format } from "date-fns";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const tags = [...new Set(posts.flatMap((p) => p.data.tags))];
+  return tags.map((tag) => ({
+    params: { tag },
+    props: {
+      tag,
+      posts: posts
+        .filter((p) => p.data.tags.includes(tag))
+        .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()),
+    },
+  }));
+}
+
+const { tag, posts } = Astro.props;
+---
+
+<BaseLayout title={`#${tag}`} description={`Blog posts tagged with "${tag}".`}>
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
+    <a
+      href="/blog"
+      class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
+    >
+      <BackIcon client:load />
+      Back to blog
+    </a>
+
+    <div class="mb-6 sm:mb-10 animate-fade-in">
+      <div class="inline-flex items-center gap-2">
+        <TagIcon client:load size={20} />
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{tag}</h1>
+      </div>
+      <p class="mt-1.5 sm:mt-2 text-sm sm:text-base text-muted-foreground">
+        {posts.length} post{posts.length !== 1 ? "s" : ""} tagged with "{tag}"
+      </p>
+    </div>
+
+    <div class="space-y-3 sm:space-y-4 animate-fade-in-delay-1">
+      {
+        posts.map((post) => (
+          <a href={`/blog/${post.id}`} class="block group">
+            <Card className="transition-colors hover:bg-accent/50">
+              <CardContent className="p-3.5 sm:p-5">
+                <h2 class="text-sm sm:text-base font-medium leading-snug group-hover:text-primary transition-colors">
+                  {post.data.title}
+                </h2>
+                <p class="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                  {post.data.excerpt}
+                </p>
+                <div class="mt-2 sm:mt-3 flex flex-wrap items-center gap-2">
+                  <div class="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+                    <CalendarIcon client:load />
+                    <time>
+                      {format(new Date(post.data.date), "MMM d, yyyy")}
+                    </time>
+                  </div>
+                  {post.data.tags.map((t) => (
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                      {t}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

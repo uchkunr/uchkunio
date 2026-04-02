@@ -1,0 +1,142 @@
+---
+import { ClientRouter } from "astro:transitions";
+import SEOHead from "@/components/SEOHead.astro";
+import Navbar from "@/components/Navbar.astro";
+import Footer from "@/components/Footer.astro";
+import FloatingControls from "@/components/FloatingControls.astro";
+import CommandPalette from "@/components/CommandPalette";
+import Analytics from "@/components/Analytics.astro";
+import "@/styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  type?: "website" | "article";
+  publishedDate?: string;
+  tags?: string[];
+}
+
+const props = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="no-fouc">
+  <head>
+    <SEOHead {...props} />
+    <ClientRouter />
+    <style is:inline>
+      .no-fouc { opacity: 0; }
+      .fouc-ready { opacity: 1; transition: opacity 0.15s ease-in; }
+    </style>
+    <script is:inline>
+      (function () {
+        var t = localStorage.getItem("theme") ||
+          (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.classList.toggle("dark", t === "dark");
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <div id="nprogress-bar"></div>
+    <Navbar />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <FloatingControls />
+    <CommandPalette client:load />
+    <Analytics />
+
+    <script is:inline>
+      function initAll() {
+        // --- Font reveal ---
+        function reveal() {
+          document.documentElement.classList.remove("no-fouc");
+          document.documentElement.classList.add("fouc-ready");
+        }
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(reveal);
+        }
+        setTimeout(reveal, 300);
+
+        // --- Theme ---
+        function getTheme() {
+          if (typeof localStorage !== "undefined" && localStorage.getItem("theme")) {
+            return localStorage.getItem("theme");
+          }
+          return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+
+        function setTheme(theme) {
+          document.documentElement.classList.toggle("dark", theme === "dark");
+          localStorage.setItem("theme", theme);
+        }
+
+        setTheme(getTheme());
+
+        // Bind all theme toggles (navbar + floating)
+        document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
+          var fresh = btn.cloneNode(true);
+          btn.parentNode.replaceChild(fresh, btn);
+          fresh.addEventListener("click", function () {
+            setTheme(getTheme() === "dark" ? "light" : "dark");
+          });
+        });
+
+        // --- Scroll: floating controls + navbar toggle visibility ---
+        var floatingControls = document.getElementById("floating-controls");
+        var scrollToTopBtn = document.getElementById("scroll-to-top");
+        var navTheme = document.getElementById("navbar-theme-toggle");
+        var navThemeMobile = document.getElementById("navbar-theme-toggle-mobile");
+
+        function onScroll() {
+          var scrolled = window.scrollY > 300;
+
+          if (floatingControls) floatingControls.style.display = scrolled ? "flex" : "none";
+          if (navTheme) navTheme.style.display = scrolled ? "none" : "inline-flex";
+          if (navThemeMobile) navThemeMobile.style.display = scrolled ? "none" : "inline-flex";
+        }
+
+        // Remove old scroll listener, add fresh one
+        window.removeEventListener("scroll", window.__onScrollHandler);
+        window.__onScrollHandler = onScroll;
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+
+        // Scroll to top
+        if (scrollToTopBtn) {
+          var freshBtn = scrollToTopBtn.cloneNode(true);
+          scrollToTopBtn.parentNode.replaceChild(freshBtn, scrollToTopBtn);
+          freshBtn.addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        }
+      }
+
+      initAll();
+
+      // --- NProgress bar for view transitions ---
+      var bar = document.getElementById("nprogress-bar");
+
+      document.addEventListener("astro:before-preparation", function () {
+        if (bar) {
+          bar.classList.remove("done");
+          bar.classList.add("running");
+        }
+      });
+
+      document.addEventListener("astro:after-swap", function () {
+        if (bar) {
+          bar.classList.remove("running");
+          bar.classList.add("done");
+          setTimeout(function () { bar.classList.remove("done"); }, 300);
+        }
+        var t = localStorage.getItem("theme") ||
+          (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.classList.toggle("dark", t === "dark");
+        initAll();
+      });
+    </script>
+  </body>
+</html>

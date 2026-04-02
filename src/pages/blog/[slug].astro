@@ -1,0 +1,249 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { Badge } from "@/components/ui/badge";
+import { BackIcon, CalendarIcon, TimerIcon } from "@/components/icons/NavIcons";
+import { SITE } from "@/config/site";
+import { getCollection, render } from "astro:content";
+import { format } from "date-fns";
+import { getReadingTime } from "@/lib/reading-time";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const sorted = posts.sort(
+    (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+  );
+  return sorted.map((post, i) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      newerPost: sorted[i - 1] ?? null,
+      olderPost: sorted[i + 1] ?? null,
+    },
+  }));
+}
+
+const { post, newerPost, olderPost } = Astro.props;
+const { Content, headings } = await render(post);
+const readingTime = getReadingTime(post.body ?? "");
+const tocHeadings = headings.filter((h) => h.depth <= 3);
+
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: post.data.title,
+  description: post.data.excerpt,
+  datePublished: post.data.date,
+  author: {
+    "@type": "Person",
+    name: "Uchkun Rakhimov",
+    url: SITE.url,
+  },
+  publisher: {
+    "@type": "Person",
+    name: "Uchkun Rakhimov",
+  },
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": new URL(`/blog/${post.id}`, SITE.url).href,
+  },
+  keywords: post.data.tags.join(", "),
+};
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.excerpt}
+  ogImage={`/og/${post.id}.png`}
+  type="article"
+  publishedDate={post.data.date}
+  tags={post.data.tags}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  <Breadcrumbs items={[{ name: "Blog", href: "/blog" }, { name: post.data.title, href: `/blog/${post.id}` }]} />
+
+  <!-- Reading Progress Bar -->
+  <div
+    id="reading-progress"
+    class="fixed top-14 left-0 h-0.5 bg-primary z-50 transition-[width] duration-100"
+    style="width: 0%"
+  >
+  </div>
+
+  <article class="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-16">
+    <!-- Back Link -->
+    <a
+      href="/blog"
+      class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
+    >
+      <BackIcon client:load />
+      Back to blog
+    </a>
+
+    <!-- Hero Illustration -->
+    <!-- Header -->
+    <header class="mb-6 sm:mb-8 animate-fade-in">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
+        <span class="inline-flex items-center gap-1.5">
+          <CalendarIcon client:load />
+          <time>{format(new Date(post.data.date), "MMMM d, yyyy")}</time>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <TimerIcon client:load />
+          {readingTime}
+        </span>
+      </div>
+      <h1 class="mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+        {post.data.title}
+      </h1>
+      <p class="mt-2 sm:mt-3 text-sm sm:text-lg text-muted-foreground">
+        {post.data.excerpt}
+      </p>
+      <div class="mt-3 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2">
+        {post.data.tags.map((tag: string) => (
+          <a href={`/blog/tags/${tag}`}>
+            <Badge variant="secondary" className="cursor-pointer hover:bg-accent transition-colors text-[11px] sm:text-xs">
+              #{tag}
+            </Badge>
+          </a>
+        ))}
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    {
+      tocHeadings.length > 2 && (
+        <nav class="mb-6 sm:mb-8 rounded-lg border border-border bg-muted/30 p-3 sm:p-4 animate-fade-in">
+          <p class="text-xs sm:text-sm font-medium mb-2 sm:mb-3">Table of Contents</p>
+          <ul class="space-y-1 sm:space-y-1.5">
+            {tocHeadings.map((h) => (
+              <li style={`padding-left: ${(h.depth - 1) * 10}px`}>
+                <a
+                  href={`#${h.slug}`}
+                  class="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+
+    <!-- Content -->
+    <div class="prose prose-mobile animate-fade-in-delay-1">
+      <Content />
+    </div>
+
+  </article>
+
+  <!-- Fixed side arrows (desktop) — Newer ← left, right → Older -->
+  {newerPost && (
+    <a
+      href={`/blog/${newerPost.id}`}
+      class="hidden lg:flex fixed left-4 xl:left-8 top-1/2 -translate-y-1/2 z-40 group"
+      aria-label={`Newer: ${newerPost.data.title}`}
+    >
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 flex items-center justify-center rounded-full border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm group-hover:border-border group-hover:bg-accent transition-all">
+          <svg class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
+        </div>
+        <div class="max-w-[140px] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <p class="text-[10px] text-muted-foreground mb-0.5">Newer</p>
+          <p class="text-xs font-medium line-clamp-2 leading-tight">{newerPost.data.title}</p>
+        </div>
+      </div>
+    </a>
+  )}
+
+  {olderPost && (
+    <a
+      href={`/blog/${olderPost.id}`}
+      class="hidden lg:flex fixed right-4 xl:right-8 top-1/2 -translate-y-1/2 z-40 group"
+      aria-label={`Older: ${olderPost.data.title}`}
+    >
+      <div class="flex items-center gap-3">
+        <div class="max-w-[140px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-right">
+          <p class="text-[10px] text-muted-foreground mb-0.5">Older</p>
+          <p class="text-xs font-medium line-clamp-2 leading-tight">{olderPost.data.title}</p>
+        </div>
+        <div class="h-10 w-10 flex items-center justify-center rounded-full border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm group-hover:border-border group-hover:bg-accent transition-all">
+          <svg class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6" /></svg>
+        </div>
+      </div>
+    </a>
+  )}
+
+  <!-- Mobile newer/older (bottom) -->
+  {
+    (newerPost || olderPost) && (
+      <nav class="lg:hidden mx-auto max-w-3xl px-4 sm:px-6 pb-8">
+        <div class="grid grid-cols-2 gap-3 pt-6 border-t border-border/50">
+          {newerPost ? (
+            <a href={`/blog/${newerPost.id}`} class="group flex flex-col gap-1 p-3 rounded-lg border border-border/50 hover:bg-accent/30 transition-all">
+              <span class="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
+                Newer
+              </span>
+              <span class="text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">{newerPost.data.title}</span>
+            </a>
+          ) : <div />}
+          {olderPost ? (
+            <a href={`/blog/${olderPost.id}`} class="group flex flex-col items-end gap-1 p-3 rounded-lg border border-border/50 hover:bg-accent/30 transition-all text-right">
+              <span class="flex items-center gap-1 text-[11px] text-muted-foreground">
+                Older
+                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6" /></svg>
+              </span>
+              <span class="text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">{olderPost.data.title}</span>
+            </a>
+          ) : <div />}
+        </div>
+      </nav>
+    )
+  }
+</BaseLayout>
+
+<script is:inline>
+  // Reading progress
+  function updateProgress() {
+    const bar = document.getElementById("reading-progress");
+    if (!bar) return;
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    bar.style.width = Math.min(progress, 100) + "%";
+  }
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  updateProgress();
+
+  // Copy code button
+  document.querySelectorAll(".prose pre").forEach((pre) => {
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "relative";
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const btn = document.createElement("button");
+    btn.className =
+      "absolute top-2 right-2 h-7 w-7 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-md border border-border bg-background/80 backdrop-blur-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer";
+    btn.setAttribute("aria-label", "Copy code");
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg>';
+
+    btn.addEventListener("click", () => {
+      const code = pre.querySelector("code");
+      if (code) {
+        navigator.clipboard.writeText(code.textContent || "");
+        btn.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg>';
+        setTimeout(() => {
+          btn.innerHTML =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg>';
+        }, 2000);
+      }
+    });
+
+    wrapper.appendChild(btn);
+  });
+</script>
