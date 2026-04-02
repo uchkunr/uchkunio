@@ -3,10 +3,14 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
+import vercel from "@astrojs/vercel";
+import keystatic from "@keystatic/astro";
 
 export default defineConfig({
   site: "https://uchkun.io",
-  integrations: [react(), sitemap()],
+  output: "static",
+  adapter: vercel(),
+  integrations: [react(), sitemap(), keystatic()],
   vite: {
     plugins: [tailwindcss()],
   },
