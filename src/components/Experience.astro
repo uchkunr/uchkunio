@@ -15,11 +15,30 @@ import { EXPERIENCE } from "@/config/site";
             {/* Company header */}
             <div class="flex items-center justify-between gap-3 px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class={`h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-lg flex items-center justify-center text-sm sm:text-base font-bold ${jobIdx === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                  {job.company.charAt(0)}
+                <div class={`h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-lg flex items-center justify-center text-sm sm:text-base font-bold overflow-hidden ${jobIdx === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {job.website ? (
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${job.website}&sz=64`}
+                      alt={job.company}
+                      class="h-6 w-6 sm:h-7 sm:w-7 object-contain"
+                    />
+                  ) : (
+                    job.company.charAt(0)
+                  )}
                 </div>
                 <div class="min-w-0">
-                  <h3 class="text-base sm:text-lg font-semibold truncate">{job.company}</h3>
+                  {job.website ? (
+                    <a
+                      href={`https://${job.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-base sm:text-lg font-semibold truncate hover:underline"
+                    >
+                      {job.company}
+                    </a>
+                  ) : (
+                    <h3 class="text-base sm:text-lg font-semibold truncate">{job.company}</h3>
+                  )}
                   <p class="text-xs sm:text-sm text-muted-foreground">{job.location}</p>
                 </div>
               </div>

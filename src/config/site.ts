@@ -51,7 +51,24 @@ export const BIO = {
 
 export const EXPERIENCE = [
   {
+    company: "Carlink LLC",
+    website: "carlink.pro",
+    location: "Tashkent, Uzbekistan",
+    roles: [
+      {
+        title: "CTO",
+        period: "Dec 2025 – Present",
+        highlights: [
+          "Designed and built the backend architecture for a B2B auto transport platform - multi-tenant data model, REST API, and integration layer with Central Dispatch, SuperDispatch, and QuickBooks",
+          "Owned all infrastructure decisions: stack selection, deployment setup, database schema, and third-party API contracts",
+          "Set up the engineering foundation from scratch - CI/CD, code review process, and dev environment standards for a growing team",
+        ],
+      },
+    ],
+  },
+  {
     company: "Startups DNA",
+    website: "startupsdna.com",
     location: "Tashkent, Uzbekistan",
     roles: [
       {
@@ -79,6 +96,7 @@ export const EXPERIENCE = [
   },
   {
     company: "Numeo.ai",
+    website: "numeo.ai",
     location: "Tashkent, Uzbekistan",
     roles: [
       {
@@ -95,6 +113,7 @@ export const EXPERIENCE = [
   },
   {
     company: "Freelancer",
+    website: "",
     location: "Tashkent, Uzbekistan",
     roles: [
       {
@@ -111,6 +130,7 @@ export const EXPERIENCE = [
   },
   {
     company: "East Telecom",
+    website: "etc.uz",
     location: "Tashkent, Uzbekistan",
     roles: [
       {
@@ -126,6 +146,7 @@ export const EXPERIENCE = [
   },
   {
     company: "Phoenix Systems",
+    website: "light.uz",
     location: "Tashkent, Uzbekistan",
     roles: [
       {
