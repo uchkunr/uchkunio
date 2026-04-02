@@ -1,3 +1,4 @@
+export const prerender = true;
 import type { APIContext } from "astro";
 import { getCollection } from "astro:content";
 import satori from "satori";

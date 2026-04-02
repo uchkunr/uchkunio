@@ -8,7 +8,7 @@ import keystatic from "@keystatic/astro";
 
 export default defineConfig({
   site: "https://uchkun.io",
-  output: "static",
+  output: "server",
   adapter: vercel(),
   integrations: [react(), sitemap(), keystatic()],
   vite: {
