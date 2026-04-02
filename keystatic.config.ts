@@ -54,13 +54,13 @@ export default config({
               }),
               {
                 label: "Roles",
-                itemLabel: (props) => props.fields.title.value || "Role",
+                itemLabel: (props) => props.fields?.title?.value || "Role",
               }
             ),
           }),
           {
             label: "Jobs",
-            itemLabel: (props) => props.fields.company.value || "Company",
+            itemLabel: (props) => props.fields?.company?.value || "Company",
           }
         ),
       },
