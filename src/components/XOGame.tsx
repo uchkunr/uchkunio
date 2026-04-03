@@ -226,7 +226,7 @@ export default function XOGame() {
 
   if (picking) {
     return (
-      <div className="flex flex-col items-center gap-8 w-full">
+      <div className="flex flex-col items-center gap-8 w-full max-w-[300px] mx-auto">
         <div className="text-center space-y-1">
           <p className="text-sm font-medium text-muted-foreground">Choose your mark</p>
           <p className="text-xs text-muted-foreground/60">X always goes first</p>
@@ -254,7 +254,7 @@ export default function XOGame() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full max-w-[300px] mx-auto">
 
       {/* Score card */}
       <div className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-6 py-3">

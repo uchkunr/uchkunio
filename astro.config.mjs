@@ -13,6 +13,9 @@ export default defineConfig({
   integrations: [react(), sitemap(), keystatic()],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      chunkSizeWarningLimit: 1024,
+    },
   },
   markdown: {
     shikiConfig: {
