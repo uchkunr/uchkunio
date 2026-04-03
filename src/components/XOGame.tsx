@@ -52,8 +52,7 @@ function minimax(
   aiMark: Mark,
 ): number {
   const result = getWinner(board);
-  if (result?.winner === aiMark) return 10 - depth;
-  if (result?.winner !== null && result?.winner !== aiMark) return depth - 10;
+  if (result) return result.winner === aiMark ? 10 - depth : depth - 10;
   if (isDraw(board)) return 0;
 
   const playerMark: Mark = aiMark === "O" ? "X" : "O";
@@ -89,7 +88,7 @@ const MOVE_ORDER = [4, 0, 2, 6, 8, 1, 3, 5, 7];
 
 function getBestMove(board: Board, aiMark: Mark): number {
   let bestVal = -Infinity;
-  let bestMove = -1;
+  const bestMoves: number[] = [];
   for (const i of MOVE_ORDER) {
     if (!board[i]) {
       board[i] = aiMark;
@@ -97,11 +96,14 @@ function getBestMove(board: Board, aiMark: Mark): number {
       board[i] = null;
       if (val > bestVal) {
         bestVal = val;
-        bestMove = i;
+        bestMoves.length = 0;
+        bestMoves.push(i);
+      } else if (val === bestVal) {
+        bestMoves.push(i);
       }
     }
   }
-  return bestMove;
+  return bestMoves[Math.floor(Math.random() * bestMoves.length)];
 }
 
 function MarkSvg({ mark, size = 44, color }: { mark: Mark; size?: number; color: string }) {
@@ -224,7 +226,7 @@ export default function XOGame() {
 
   if (picking) {
     return (
-      <div className="flex flex-col items-center gap-8" style={{ width: 300 }}>
+      <div className="flex flex-col items-center gap-8 w-full">
         <div className="text-center space-y-1">
           <p className="text-sm font-medium text-muted-foreground">Choose your mark</p>
           <p className="text-xs text-muted-foreground/60">X always goes first</p>
@@ -255,10 +257,7 @@ export default function XOGame() {
     <div className="flex flex-col items-center gap-4">
 
       {/* Score card */}
-      <div
-        className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-6 py-3"
-        style={{ width: 300 }}
-      >
+      <div className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-6 py-3">
         <ScoreColumn label="You" value={score.player} />
         <ScoreColumn label="Draw" value={score.draws} muted />
         <ScoreColumn label="AI" value={score.ai} />
@@ -279,15 +278,15 @@ export default function XOGame() {
 
       {/* Board */}
       <div
-        className="relative overflow-hidden rounded-xl"
-        style={{ width: 300, height: 300, border: `1.5px solid ${LINE_COLOR}` }}
+        className="relative w-full overflow-hidden rounded-xl"
+        style={{ aspectRatio: "1 / 1", border: `1.5px solid ${LINE_COLOR}` }}
       >
         {/* Grid lines */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute" style={{ left: 100, top: 0, width: 1.5, height: 300, backgroundColor: LINE_COLOR }} />
-          <div className="absolute" style={{ left: 200, top: 0, width: 1.5, height: 300, backgroundColor: LINE_COLOR }} />
-          <div className="absolute" style={{ top: 100, left: 0, width: 300, height: 1.5, backgroundColor: LINE_COLOR }} />
-          <div className="absolute" style={{ top: 200, left: 0, width: 300, height: 1.5, backgroundColor: LINE_COLOR }} />
+          <div className="absolute" style={{ left: "33.33%", top: 0, width: 1.5, height: "100%", backgroundColor: LINE_COLOR }} />
+          <div className="absolute" style={{ left: "66.66%", top: 0, width: 1.5, height: "100%", backgroundColor: LINE_COLOR }} />
+          <div className="absolute" style={{ top: "33.33%", left: 0, width: "100%", height: 1.5, backgroundColor: LINE_COLOR }} />
+          <div className="absolute" style={{ top: "66.66%", left: 0, width: "100%", height: 1.5, backgroundColor: LINE_COLOR }} />
         </div>
 
         {/* Cells */}
@@ -307,7 +306,7 @@ export default function XOGame() {
                   ? "hover:bg-accent/25 cursor-pointer active:bg-accent/40"
                   : "cursor-default",
               ].join(" ")}
-              style={{ top: row * 100, left: col * 100, width: 100, height: 100 }}
+              style={{ top: `${row * 33.33}%`, left: `${col * 33.33}%`, width: "33.33%", height: "33.33%" }}
             >
               {cell && (
                 <span key={`${i}-${cell}`} className="xo-mark">
@@ -323,7 +322,7 @@ export default function XOGame() {
 
         {/* SVG win line */}
         {winCoords && (
-          <svg className="absolute inset-0 pointer-events-none" width="300" height="300" viewBox="0 0 300 300">
+          <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%" viewBox="0 0 300 300">
             <line
               x1={winCoords.x1} y1={winCoords.y1}
               x2={winCoords.x2} y2={winCoords.y2}
