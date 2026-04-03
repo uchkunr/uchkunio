@@ -29,3 +29,19 @@ KEYSTATIC_GITHUB_CLIENT_SECRET=
 KEYSTATIC_SECRET=
 PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=
 ```
+
+## Contributing
+
+This is a personal portfolio. PRs are not accepted for content changes (blog posts, bio, experience).
+
+Bug fixes and technical improvements are welcome — open an issue first.
+
+**Before submitting a PR:**
+
+- `bun dev` runs without errors or warnings
+- Code follows the existing style — no new dependencies without discussion
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org): `feat:`, `fix:`, `chore:`, etc.
+- One concern per PR — no bundling unrelated changes
+- Do not leave `console.log`, commented-out code, or TODOs
+
+PRs that ignore these rules will be closed without review.
