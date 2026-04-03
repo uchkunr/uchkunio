@@ -129,7 +129,7 @@
 }
 
 .prose {
-  @apply text-foreground max-w-none text-sm sm:text-base;
+  @apply text-foreground max-w-none text-base;
 }
 .prose h1,
 .prose h2,
@@ -138,16 +138,16 @@
   @apply text-foreground font-semibold tracking-tight;
 }
 .prose h1 {
-  @apply text-xl sm:text-3xl mt-6 sm:mt-8 mb-3 sm:mb-4;
+  @apply text-2xl sm:text-3xl mt-6 sm:mt-8 mb-3 sm:mb-4;
 }
 .prose h2 {
-  @apply text-lg sm:text-2xl mt-6 sm:mt-8 mb-2 sm:mb-3;
+  @apply text-xl sm:text-2xl mt-6 sm:mt-8 mb-2 sm:mb-3;
 }
 .prose h3 {
-  @apply text-base sm:text-xl mt-4 sm:mt-6 mb-2;
+  @apply text-lg sm:text-xl mt-4 sm:mt-6 mb-2;
 }
 .prose p {
-  @apply leading-relaxed sm:leading-7 mb-3 sm:mb-4;
+  @apply leading-7 mb-3 sm:mb-4;
 }
 .prose a {
   @apply text-primary underline underline-offset-4;
@@ -169,11 +169,11 @@
   @apply border-l-4 border-muted-foreground/30 pl-3 sm:pl-4 italic my-3 sm:my-4;
 }
 .prose code {
-  @apply bg-muted text-foreground px-1 sm:px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono;
+  @apply bg-muted text-foreground px-1 sm:px-1.5 py-0.5 rounded text-sm font-mono;
   word-break: break-word;
 }
 .prose pre {
-  @apply rounded-lg p-3 sm:p-4 overflow-x-auto my-3 sm:my-4 border border-border text-xs sm:text-sm;
+  @apply rounded-lg p-3 sm:p-4 overflow-x-auto my-3 sm:my-4 border border-border text-sm;
   background-color: var(--shiki-light-bg, var(--muted)) !important;
   -webkit-overflow-scrolling: touch;
 }
@@ -196,6 +196,33 @@
 .prose hr {
   @apply border-border my-8;
 }
+
+/* ── XO Game animations ─────────────────────── */
+@keyframes xo-pop-in {
+  0%   { transform: scale(0) rotate(-8deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(3deg); opacity: 1; }
+  80%  { transform: scale(0.95) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes xo-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes xo-result-in {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes xo-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.5); }
+}
+@keyframes xo-strike {
+  to { stroke-dashoffset: 0; }
+}
+.xo-mark    { animation: xo-pop-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.xo-overlay { animation: xo-overlay-in 0.22s ease-out forwards; }
+.xo-result  { animation: xo-result-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards; opacity: 0; }
+.xo-dot-pulse { animation: xo-dot-pulse 1.2s ease-in-out infinite; }
 
 @keyframes fade-in {
   from {

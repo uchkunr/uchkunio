@@ -10,10 +10,12 @@ import {
   TbBrandX,
   TbBrandLinkedin,
   TbMail,
+  TbCircle,
 } from "react-icons/tb";
 
 const menuItems = [
   { label: "Home", href: "/", icon: <TbHome size={20} /> },
+  { label: "X/O", href: "/xo", icon: <TbCircle size={20} /> },
   { label: "Projects", href: "/projects", icon: <TbCode size={20} /> },
   { label: "Blog", href: "/blog", icon: <TbNotebook size={20} /> },
   {
