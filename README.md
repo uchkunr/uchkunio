@@ -1,13 +1,12 @@
 # uchkun.io
 
-Personal portfolio and blog. Built with Astro, React, Tailwind CSS v4, and Keystatic CMS. Deployed on Vercel.
+Personal portfolio and blog. Built with Astro, React, Tailwind CSS v4. Deployed on Vercel.
 
 ## Stack
 
 - **Astro 6** — SSR with static prerendering
 - **React** — interactive components
 - **Tailwind CSS v4** — styling
-- **Keystatic** — local/GitHub-backed CMS for blog and experience
 - **Bun** — package manager
 
 ## Development
@@ -19,16 +18,34 @@ bun dev
 
 Open [localhost:4321](http://localhost:4321).
 
-## CMS
+## Admin
 
-Content is managed via Keystatic at `/keystatic`. In local mode it writes directly to the filesystem. In production it uses GitHub OAuth — set these env vars:
+Custom admin panel at `/admin`. Password-protected, writes content to GitHub via API.
 
+```sh
+cp .env.example .env
+# fill in the values
 ```
-KEYSTATIC_GITHUB_CLIENT_ID=
-KEYSTATIC_GITHUB_CLIENT_SECRET=
-KEYSTATIC_SECRET=
-PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=
-```
+
+| Variable | Description |
+|---|---|
+| `ADMIN_PASSWORD` | Login password |
+| `ADMIN_SECRET` | Random secret for session signing (`openssl rand -hex 32`) |
+| `GITHUB_TOKEN` | Personal access token with `repo` scope |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis URL (free tier) |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token |
+
+Upstash: [upstash.com](https://upstash.com) → Create Database → REST API.
+
+### Security model
+
+- All `/admin` and `/api/admin` routes are protected by middleware
+- Session token is HMAC-SHA256 derived from `ADMIN_SECRET` — changing the secret invalidates all sessions
+- Password and token comparisons use constant-time equality to prevent timing attacks
+- Failed logins have a fixed 500ms delay to slow brute force
+- **3 failed attempts = IP blocked for 7 days** (via Upstash Redis)
+- Cookies are `HttpOnly`, `SameSite=Strict`, `Secure` (in production)
+- Slug inputs are sanitized (`[^a-z0-9-]` stripped) to prevent path traversal
 
 ## Contributing
 

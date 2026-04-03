@@ -1,0 +1,93 @@
+---
+export const prerender = false;
+import "@/styles/global.css";
+
+const error = Astro.url.searchParams.get("error");
+const left = Astro.url.searchParams.get("left");
+const isBlocked = error === "blocked";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Admin</title>
+    <script is:inline>
+      const t = localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", t === "dark");
+    </script>
+    <script is:inline>
+      document.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("toggle-password");
+        const input = document.getElementById("password");
+        const eye = document.getElementById("eye-icon");
+        const eyeOff = document.getElementById("eye-off-icon");
+        btn.addEventListener("click", () => {
+          const show = input.type === "password";
+          input.type = show ? "text" : "password";
+          eye.classList.toggle("hidden", show);
+          eyeOff.classList.toggle("hidden", !show);
+        });
+      });
+    </script>
+  </head>
+  <body class="min-h-screen bg-background text-foreground font-sans antialiased flex items-center justify-center px-4">
+    <div class="w-full max-w-sm space-y-8">
+      <div class="space-y-1.5">
+        <h1 class="text-xl sm:text-3xl font-semibold tracking-tight">Admin</h1>
+        <p class="text-sm sm:text-base text-muted-foreground">uchkun.io</p>
+      </div>
+
+      <form action="/api/admin/login" method="POST" class="space-y-4 sm:space-y-5">
+        <div class="space-y-2">
+          <label for="password" class="text-sm sm:text-base font-medium">Password</label>
+          <div class="relative">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autofocus
+              class="w-full rounded-lg border border-input bg-background px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+            <button
+              type="button"
+              id="toggle-password"
+              aria-label="Toggle password visibility"
+              class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {isBlocked && (
+          <p class="text-sm text-destructive">Too many failed attempts. Try again in 7 days.</p>
+        )}
+        {error === "1" && (
+          <p class="text-sm text-destructive">
+            Wrong password.{left ? ` ${left} attempt${left === "1" ? "" : "s"} left.` : ""}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={isBlocked}
+          class="w-full rounded-lg bg-primary text-primary-foreground px-3 py-2 sm:py-3 text-sm sm:text-base font-medium transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Sign in
+        </button>
+      </form>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,101 @@
+---
+import "@/styles/global.css";
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+const pathname = Astro.url.pathname;
+
+const nav = [
+  {
+    href: "/admin",
+    label: "Dashboard",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,
+  },
+  {
+    href: "/admin/blog",
+    label: "Blog",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
+  },
+  {
+    href: "/admin/experience",
+    label: "Experience",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`,
+  },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} — Admin</title>
+    <script is:inline>
+      const t = localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", t === "dark");
+    </script>
+  </head>
+  <body class="min-h-screen bg-background text-foreground font-sans antialiased">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="hidden md:flex w-56 flex-col border-r border-border bg-card px-3 py-6 shrink-0">
+        <a href="/admin" class="px-3 mb-8 text-sm font-semibold tracking-tight">
+          uchkun.io <span class="text-muted-foreground font-normal">admin</span>
+        </a>
+        <nav class="flex flex-col gap-0.5 flex-1">
+          {nav.map((item) => (
+            <a
+              href={item.href}
+              class:list={[
+                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                pathname === item.href
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              ]}
+            >
+              <Fragment set:html={item.icon} />
+              {item.label}
+            </a>
+          ))}
+        </nav>
+        <form action="/api/admin/logout" method="POST">
+          <button
+            type="submit"
+            class="w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </button>
+        </form>
+      </aside>
+
+      <!-- Main -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Mobile top bar -->
+        <header class="md:hidden flex items-center justify-between border-b border-border px-4 h-12">
+          <span class="text-sm font-semibold">Admin</span>
+          <nav class="flex gap-3">
+            {nav.map((item) => (
+              <a
+                href={item.href}
+                class:list={[
+                  "text-xs font-medium transition-colors",
+                  pathname === item.href ? "text-foreground" : "text-muted-foreground",
+                ]}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        </header>
+
+        <main class="flex-1 px-6 py-8 max-w-4xl w-full mx-auto">
+          <slot />
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

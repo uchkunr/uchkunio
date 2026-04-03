@@ -1,0 +1,38 @@
+---
+export const prerender = false;
+import AdminLayout from "@/components/admin/AdminLayout.astro";
+import { getCollection } from "astro:content";
+
+const posts = await getCollection("blog");
+---
+
+<AdminLayout title="Dashboard">
+  <div class="space-y-8">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Dashboard</h1>
+      <p class="text-sm text-muted-foreground mt-1">Welcome back.</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div class="rounded-xl border border-border bg-card p-5 space-y-1">
+        <p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">Posts</p>
+        <p class="text-3xl font-bold tabular-nums">{posts.length}</p>
+      </div>
+      <a
+        href="/admin/blog/new"
+        class="rounded-xl border border-dashed border-border bg-card p-5 flex items-center justify-center text-sm text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-colors"
+      >
+        + New post
+      </a>
+    </div>
+
+    <div class="space-y-2">
+      <h2 class="text-sm font-medium">Quick links</h2>
+      <div class="flex gap-2">
+        <a href="/admin/blog" class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors">Blog</a>
+        <a href="/admin/experience" class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors">Experience</a>
+        <a href="/" target="_blank" class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors">View site ↗</a>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
