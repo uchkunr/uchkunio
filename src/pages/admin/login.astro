@@ -33,8 +33,9 @@ const isBlocked = error === "blocked";
       });
     </script>
   </head>
-  <body class="min-h-screen bg-background text-foreground font-sans antialiased flex items-center justify-center px-4">
-    <div class="w-full max-w-sm space-y-8">
+  <body class="bg-background text-foreground font-sans antialiased">
+    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-sm space-y-8 rounded-2xl border border-border bg-card px-8 py-10">
       <div class="space-y-1.5">
         <h1 class="text-xl sm:text-3xl font-semibold tracking-tight">Admin</h1>
         <p class="text-sm sm:text-base text-muted-foreground">uchkun.io</p>
@@ -88,6 +89,7 @@ const isBlocked = error === "blocked";
           Sign in
         </button>
       </form>
+    </div>
     </div>
   </body>
 </html>

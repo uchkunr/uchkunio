@@ -52,45 +52,111 @@ export const BIO = {
 import experienceData from "../content/experience.json";
 export const EXPERIENCE = experienceData.jobs;
 
-export const PROJECTS = [
+export const PROJECTS: readonly Project[] = [
+  // ── Work projects ──────────────────────────────────────────
   {
+    type: "work",
+    featured: true,
     name: "TedbookCRM",
     description:
-      "Full-stack CRM system supporting web and mobile platforms with role-based access, real-time Socket.io updates, and Firebase push notifications for couriers.",
+      "Architected and built a complete CRM system from scratch for a courier business. Multi-role access (operators, logistics managers, warehouse staff, couriers), real-time order tracking via Socket.io, Firebase push notifications to courier mobile apps, and an admin analytics dashboard with daily/weekly/monthly reporting.",
     tech: ["Express.js", "TypeScript", "MongoDB", "Socket.io", "Firebase"],
-    metrics: "50+ daily orders, 10+ users, 600+ total transactions",
+    metrics: "600+ total orders · 50+ orders/day · 10+ active users",
   },
   {
+    type: "work",
+    featured: true,
+    name: "Carlink B2B Platform",
+    description:
+      "Designed the backend architecture for a B2B auto transport marketplace as CTO — multi-tenant data model, REST API, and integration layer with Central Dispatch, SuperDispatch, and QuickBooks. Set up CI/CD, code review process, and dev environment standards from day one.",
+    tech: ["Node.js", "TypeScript", "PostgreSQL", "Docker", "GitHub Actions"],
+  },
+  {
+    type: "work",
     name: "WiFi Captive Portal",
     description:
-      "High-throughput authentication system with OTP-based SMS verification integrated with Unifi controller for seamless network access across multiple branches.",
-    tech: ["Node.js", "TypeScript", "MySQL", "Sequelize", "Unifi API"],
-    metrics: "1,000+ daily registrations, 14 branch locations",
+      "High-throughput guest Wi-Fi authentication system deployed across 14 branch locations. OTP-based SMS verification with automatic session provisioning via the UniFi Controller API. Built with zero manual configuration overhead after initial deployment.",
+    tech: ["Node.js", "TypeScript", "MySQL", "Sequelize", "UniFi API"],
+    metrics: "1,000+ daily sessions · 14 branch locations",
+    github: "https://github.com/uchkunrakhimow/otpgate-unifi",
   },
   {
-    name: "Numeo.ai Chrome Extension",
+    type: "work",
+    name: "PillPlan Notification Engine",
     description:
-      "Backend infrastructure for Chrome extension with real-time load filtering and AI integration for logistics workflows, built on GCP.",
-    tech: ["TypeScript", "GCP", "MongoDB", "Microsoft Rush"],
+      "Queue-based medication reminder system using GCP Cloud Tasks for scheduled APNs delivery to iOS devices. Retry logic with backoff for failed deliveries, Nx monorepo refactor following clean code principles, and a GitHub Actions CI/CD pipeline for zero-downtime deploys. Project was closed by the company after handoff.",
+    tech: ["NestJS", "GCP Cloud Tasks", "APNs", "Nx", "GitHub Actions"],
+  },
+  {
+    type: "work",
+    featured: true,
+    name: "Numeo.ai Chrome Extension Backend",
+    description:
+      "Scalable GCP + MongoDB backend powering a logistics Chrome extension. Real-time load filtering engine, AI-assisted rate suggestions, and a TypeScript + React monorepo managed with Microsoft Rush. Includes structured GCP logging, on-call alerting, and error tracking for production stability.",
+    tech: ["TypeScript", "GCP", "MongoDB", "Microsoft Rush", "React"],
     metrics: "1,000+ active users",
   },
   {
+    type: "work",
+    name: "VoIP Integration Middleware",
+    description:
+      "Node.js middleware bridging Asterisk PBX with a custom operator dashboard. Live call monitoring, spy/whisper mode, pause controls, and intelligent queue routing — all over a WebSocket event stream with sub-second latency. Open-sourced the Asterisk AMI client as a standalone package.",
+    tech: ["Node.js", "TypeScript", "Asterisk AMI", "WebSocket"],
+    metrics: "60+ concurrent agents · sub-second latency",
+    github: "https://github.com/uchkunrakhimow/NodeJS-AsteriskManager",
+  },
+  {
+    type: "work",
     name: "Assetsy v2 API",
     description:
-      "Fastify-based microservice API redesign with improved endpoint structure, MongoDB transaction handling, and zero-downtime database migrations.",
+      "Led API redesign for a Fastify-based asset management microservice at Startups DNA — restructured endpoint contracts, replaced ad-hoc queries with transactional MongoDB aggregation pipelines, added database indexing strategies, and executed zero-downtime schema migrations.",
     tech: ["Fastify", "TypeScript", "MongoDB"],
   },
+
+  // ── Open source ────────────────────────────────────────────
   {
-    name: "PillPlan Notifications",
+    type: "oss",
+    featured: true,
+    name: "UniFi Best Practices",
     description:
-      "Automated medication reminder system using GCP Cloud Tasks for scheduled push notifications with queue-based architecture and retry logic.",
-    tech: ["NestJS", "GCP Cloud Tasks", "APNs", "GitHub Actions"],
+      "Comprehensive developer reference for the Ubiquiti UniFi Controller API — the documentation the official docs should have been. Covers authentication, device management, client operations, VLAN config, real-time WebSocket events, and DPI analytics with working Node.js examples.",
+    tech: ["Node.js", "JavaScript", "UniFi API"],
+    metrics: "17 stars · 1 fork",
+    github: "https://github.com/uchkunrakhimow/unifi-best-practices",
   },
   {
-    name: "VoIP Integration System",
+    type: "oss",
+    name: "HRCS API",
     description:
-      "Node.js middleware connecting Asterisk phone systems with custom call queue management, real-time monitoring, spy mode, and intelligent call routing.",
-    tech: ["Node.js", "Asterisk", "WebSocket"],
-    metrics: "Sub-second latency for live call data",
+      "HR candidate screening REST API built with Bun + Elysia.js. Multi-tenant organization support, candidate lifecycle management, multilingual question banking, JWT auth, and PDF result exports. Structured for rapid deployment with Prisma + PostgreSQL.",
+    tech: ["Bun", "Elysia.js", "TypeScript", "PostgreSQL", "Prisma"],
+    github: "https://github.com/uchkunrakhimow/hrcs-api",
+  },
+  {
+    type: "oss",
+    name: "Auth Kit",
+    description:
+      "Modern authentication platform covering passkeys, OAuth providers, session management, and RBAC. Built as a reference implementation for production-grade auth in TypeScript backends.",
+    tech: ["TypeScript", "Node.js", "PostgreSQL"],
+    github: "https://github.com/uchkunrakhimow/auth-kit",
+  },
+  {
+    type: "oss",
+    name: "Vision Shop",
+    description:
+      "AI-powered product analysis tool combining Google Cloud Vision API with OpenAI GPT — takes a product image, extracts attributes, and generates structured metadata for e-commerce listings.",
+    tech: ["TypeScript", "Google Vision API", "OpenAI"],
+    github: "https://github.com/uchkunrakhimow/vision-shop",
   },
 ] as const;
+
+type Project = {
+  type: "work" | "oss";
+  name: string;
+  description: string;
+  tech: readonly string[];
+  featured?: boolean;
+  metrics?: string;
+  github?: string;
+  live?: string;
+};
