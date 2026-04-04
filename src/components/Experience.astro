@@ -158,24 +158,28 @@ const past = EXPERIENCE.slice(1);
 </section>
 
 <script>
-  document.querySelectorAll<HTMLElement>(".exp-item").forEach((item) => {
-    const trigger = item.querySelector<HTMLButtonElement>(".exp-trigger")!;
-    const body = item.querySelector<HTMLElement>(".exp-body")!;
-    const inner = item.querySelector<HTMLElement>(".exp-inner")!;
-    const chevron = item.querySelector<SVGElement>(".exp-chevron")!;
+  function initExperience() {
+    document.querySelectorAll<HTMLElement>(".exp-item").forEach((item) => {
+      const trigger = item.querySelector<HTMLButtonElement>(".exp-trigger")!;
+      const body = item.querySelector<HTMLElement>(".exp-body")!;
+      const inner = item.querySelector<HTMLElement>(".exp-inner")!;
+      const chevron = item.querySelector<SVGElement>(".exp-chevron")!;
 
-    trigger.addEventListener("click", () => {
-      const open = trigger.getAttribute("aria-expanded") === "true";
+      trigger.addEventListener("click", () => {
+        const open = trigger.getAttribute("aria-expanded") === "true";
 
-      if (open) {
-        body.style.maxHeight = "0";
-        trigger.setAttribute("aria-expanded", "false");
-        chevron.style.transform = "";
-      } else {
-        body.style.maxHeight = inner.scrollHeight + "px";
-        trigger.setAttribute("aria-expanded", "true");
-        chevron.style.transform = "rotate(180deg)";
-      }
+        if (open) {
+          body.style.maxHeight = "0";
+          trigger.setAttribute("aria-expanded", "false");
+          chevron.style.transform = "";
+        } else {
+          body.style.maxHeight = inner.scrollHeight + "px";
+          trigger.setAttribute("aria-expanded", "true");
+          chevron.style.transform = "rotate(180deg)";
+        }
+      });
     });
-  });
+  }
+
+  document.addEventListener("astro:page-load", initExperience);
 </script>

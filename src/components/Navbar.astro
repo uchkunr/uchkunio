@@ -7,7 +7,7 @@ const pathname = Astro.url.pathname;
 ---
 
 <header
-  class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg"
+  class="sticky top-0 z-[100] w-full border-b border-border/40 bg-background/80 backdrop-blur-lg"
 >
   <nav class="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6">
     <a
@@ -106,7 +106,7 @@ const pathname = Astro.url.pathname;
       >
         <CommandIcon client:load />
       </button>
-      <MobileMenu client:load pathname={pathname} />
+      <MobileMenu client:load pathname={pathname} transition:persist />
     </div>
   </nav>
 </header>

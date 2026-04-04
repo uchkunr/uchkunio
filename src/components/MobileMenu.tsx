@@ -33,12 +33,21 @@ const socialItems = [
   { label: "Email", href: "mailto:uchkunrakhimov@gmail.com", icon: <TbMail size={20} /> },
 ];
 
-export default function MobileMenu({ pathname }: { pathname: string }) {
+export default function MobileMenu({ pathname: initialPathname }: { pathname: string }) {
   const [open, setOpen] = useState(false);
+  const [pathname, setPathname] = useState(initialPathname);
 
+  // Keep pathname in sync and close menu on every Astro page navigation.
+  // This handles both transition:persist (component stays mounted) and
+  // regular re-hydration cases.
   useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+    const handlePageLoad = () => {
+      setPathname(window.location.pathname);
+      setOpen(false);
+    };
+    document.addEventListener("astro:page-load", handlePageLoad);
+    return () => document.removeEventListener("astro:page-load", handlePageLoad);
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";

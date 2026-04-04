@@ -200,134 +200,155 @@ const GITHUB_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="
 </style>
 
 <script>
-  const track = document.getElementById("slider-track") as HTMLElement;
-  const slides = Array.from(document.querySelectorAll<HTMLElement>(".slider-slide"));
-  const dots = Array.from(document.querySelectorAll<HTMLButtonElement>(".slider-dot"));
-  const progress = document.getElementById("slider-progress") as HTMLElement;
-  const card = document.getElementById("slider-card") as HTMLElement;
+  let sliderCleanup: (() => void) | null = null;
 
-  const DURATION = 5000;
-  let current = 0;
-  let rafId: number | null = null;
-  let intervalId: ReturnType<typeof setInterval> | null = null;
-  let startTime = 0;
-  let paused = false;
-  let pausedAt = 0;
+  function initSlider() {
+    const track = document.getElementById("slider-track") as HTMLElement | null;
+    if (!track) return;
 
-  // Measure a slide's true height by cloning it off-screen
-  function measureSlide(slide: HTMLElement): number {
-    const clone = slide.cloneNode(true) as HTMLElement;
-    clone.style.cssText = [
-      "position:fixed",
-      "top:-9999px",
-      "left:-9999px",
-      `width:${track.offsetWidth}px`,
-      "opacity:0",
-      "pointer-events:none",
-      "flex-direction:column",
-      "display:flex",
-    ].join(";");
-    document.body.appendChild(clone);
-    const h = clone.scrollHeight;
-    document.body.removeChild(clone);
-    return h;
-  }
+    const slides = Array.from(document.querySelectorAll<HTMLElement>(".slider-slide"));
+    const dots = Array.from(document.querySelectorAll<HTMLButtonElement>(".slider-dot"));
+    const progress = document.getElementById("slider-progress") as HTMLElement;
+    const card = document.getElementById("slider-card") as HTMLElement;
 
-  // Fix track height = tallest slide so layout never shifts
-  function setTrackHeight() {
-    const maxH = Math.max(...slides.map(measureSlide));
-    track.style.height = maxH + "px";
-    // Ensure all non-active slides are absolute
-    slides.forEach((s, i) => {
-      s.style.position = "absolute";
-      s.style.inset = "0";
-      if (i === current) {
-        s.style.opacity = "1";
-        s.style.pointerEvents = "auto";
-      } else {
-        s.style.opacity = "0";
-        s.style.pointerEvents = "none";
-      }
-    });
-  }
+    const DURATION = 5000;
+    let current = 0;
+    let rafId: number | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let startTime = 0;
+    let paused = false;
+    let pausedAt = 0;
 
-  function goTo(index: number) {
-    if (index === current) return;
-    slides[current].style.opacity = "0";
-    slides[current].style.pointerEvents = "none";
-    slides[index].style.opacity = "1";
-    slides[index].style.pointerEvents = "auto";
-
-    dots.forEach((dot, i) => {
-      dot.style.background = i === index
-        ? "var(--foreground)"
-        : "color-mix(in oklch, var(--foreground) 20%, transparent)";
-      dot.style.width = i === index ? "1.25rem" : "0.375rem";
-    });
-
-    current = index;
-  }
-
-  function resetProgress() {
-    if (rafId) cancelAnimationFrame(rafId);
-    progress.style.transition = "none";
-    progress.style.transform = "scaleX(0)";
-    // force reflow
-    progress.getBoundingClientRect();
-  }
-
-  function runProgress(from = 0) {
-    if (paused) return;
-    startTime = performance.now() - from;
-
-    function tick(now: number) {
-      const pct = Math.min((now - startTime) / DURATION, 1);
-      progress.style.transform = `scaleX(${pct})`;
-      if (pct < 1) rafId = requestAnimationFrame(tick);
+    function measureSlide(slide: HTMLElement): number {
+      const clone = slide.cloneNode(true) as HTMLElement;
+      clone.style.cssText = [
+        "position:fixed",
+        "top:-9999px",
+        "left:-9999px",
+        `width:${track.offsetWidth}px`,
+        "opacity:0",
+        "pointer-events:none",
+        "flex-direction:column",
+        "display:flex",
+      ].join(";");
+      document.body.appendChild(clone);
+      const h = clone.scrollHeight;
+      document.body.removeChild(clone);
+      return h;
     }
-    rafId = requestAnimationFrame(tick);
-  }
 
-  function next() {
-    goTo((current + 1) % slides.length);
-    resetProgress();
-    runProgress();
-  }
+    function setTrackHeight() {
+      const maxH = Math.max(...slides.map(measureSlide));
+      track.style.height = maxH + "px";
+      slides.forEach((s, i) => {
+        s.style.position = "absolute";
+        s.style.inset = "0";
+        if (i === current) {
+          s.style.opacity = "1";
+          s.style.pointerEvents = "auto";
+        } else {
+          s.style.opacity = "0";
+          s.style.pointerEvents = "none";
+        }
+      });
+    }
 
-  function startCycle() {
-    if (intervalId) clearInterval(intervalId);
-    intervalId = setInterval(() => { if (!paused) next(); }, DURATION);
-  }
+    function goTo(index: number) {
+      if (index === current) return;
+      slides[current].style.opacity = "0";
+      slides[current].style.pointerEvents = "none";
+      slides[index].style.opacity = "1";
+      slides[index].style.pointerEvents = "auto";
 
-  // Dot clicks
-  dots.forEach((dot) => {
-    dot.addEventListener("click", () => {
-      const target = Number(dot.dataset.target);
-      if (target === current) return;
-      goTo(target);
+      dots.forEach((dot, i) => {
+        dot.style.background = i === index
+          ? "var(--foreground)"
+          : "color-mix(in oklch, var(--foreground) 20%, transparent)";
+        dot.style.width = i === index ? "1.25rem" : "0.375rem";
+      });
+
+      current = index;
+    }
+
+    function resetProgress() {
+      if (rafId) cancelAnimationFrame(rafId);
+      progress.style.transition = "none";
+      progress.style.transform = "scaleX(0)";
+      progress.getBoundingClientRect();
+    }
+
+    function runProgress(from = 0) {
+      if (paused) return;
+      startTime = performance.now() - from;
+
+      function tick(now: number) {
+        const pct = Math.min((now - startTime) / DURATION, 1);
+        progress.style.transform = `scaleX(${pct})`;
+        if (pct < 1) rafId = requestAnimationFrame(tick);
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function next() {
+      goTo((current + 1) % slides.length);
       resetProgress();
       runProgress();
+    }
+
+    function startCycle() {
       if (intervalId) clearInterval(intervalId);
-      startCycle();
+      intervalId = setInterval(() => { if (!paused) next(); }, DURATION);
+    }
+
+    dots.forEach((dot) => {
+      dot.addEventListener("click", () => {
+        const target = Number(dot.dataset.target);
+        if (target === current) return;
+        goTo(target);
+        resetProgress();
+        runProgress();
+        if (intervalId) clearInterval(intervalId);
+        startCycle();
+      });
     });
-  });
 
-  // Pause on hover
-  card.addEventListener("mouseenter", () => {
-    paused = true;
-    pausedAt = performance.now() - startTime;
-    if (rafId) cancelAnimationFrame(rafId);
-  });
+    const onMouseEnter = () => {
+      paused = true;
+      pausedAt = performance.now() - startTime;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+    const onMouseLeave = () => {
+      paused = false;
+      runProgress(pausedAt);
+    };
 
-  card.addEventListener("mouseleave", () => {
-    paused = false;
-    runProgress(pausedAt);
-  });
+    card.addEventListener("mouseenter", onMouseEnter);
+    card.addEventListener("mouseleave", onMouseLeave);
 
-  if (slides.length > 1) {
-    setTrackHeight();
-    window.addEventListener("resize", setTrackHeight);
-    runProgress();
-    startCycle();
+    if (slides.length > 1) {
+      setTrackHeight();
+      window.addEventListener("resize", setTrackHeight);
+      runProgress();
+      startCycle();
+    }
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener("resize", setTrackHeight);
+      card.removeEventListener("mouseenter", onMouseEnter);
+      card.removeEventListener("mouseleave", onMouseLeave);
+    };
   }
+
+  document.addEventListener("astro:before-preparation", () => {
+    if (sliderCleanup) {
+      sliderCleanup();
+      sliderCleanup = null;
+    }
+  });
+
+  document.addEventListener("astro:page-load", () => {
+    sliderCleanup = initSlider() ?? null;
+  });
 </script>
