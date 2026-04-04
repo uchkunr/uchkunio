@@ -20,7 +20,7 @@ const menuItems = [
   { label: "Blog", href: "/blog", icon: <TbNotebook size={20} /> },
   {
     label: "Resume",
-    href: "https://docs.google.com/document/d/1_-cqOu5iZBPYh48o1oi8C1HFe1D3VlqWnNS3tPHWJQ/edit?usp=sharing",
+    href: "https://docs.google.com/document/d/1urFr8PbkJc7hbxIc53rLXC0qdW0sCjIwkt84ONxhhFY/edit?usp=sharing",
     icon: <TbFileText size={20} />,
     external: true,
   },
