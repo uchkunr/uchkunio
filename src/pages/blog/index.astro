@@ -2,7 +2,6 @@
 export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { SearchIcon, CalendarIcon, TimerIcon } from "@/components/icons/NavIcons";
 import { getCollection } from "astro:content";
 import { format } from "date-fns";
@@ -14,7 +13,6 @@ const posts = allPosts.sort(
   (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
 );
 
-const allTags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
 ---
 
 <BaseLayout title="Blog" description="Technical articles about backend engineering, Node.js, TypeScript, and web development.">
@@ -47,18 +45,6 @@ const allTags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
       />
     </div>
 
-    <!-- Tags -->
-    <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-6 sm:mb-8 animate-fade-in-delay-1 overflow-x-auto pb-1">
-      {
-        allTags.map((tag) => (
-          <a href={`/blog/tags/${tag}`}>
-            <Badge variant="secondary" className="cursor-pointer hover:bg-accent transition-colors text-[11px] sm:text-xs whitespace-nowrap">
-              #{tag}
-            </Badge>
-          </a>
-        ))
-      }
-    </div>
 
     <!-- Posts -->
     <div class="space-y-3 sm:space-y-4 animate-fade-in-delay-2" id="posts-list">
@@ -79,24 +65,15 @@ const allTags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
                 <p class="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">
                   {post.data.excerpt}
                 </p>
-                <div class="mt-2 sm:mt-3 flex flex-wrap items-center gap-2 sm:gap-3">
-                  <div class="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+                <div class="mt-2 flex items-center gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                  <span class="inline-flex items-center gap-1">
                     <CalendarIcon client:load />
-                    <time>
-                      {format(new Date(post.data.date), "MMM d, yyyy")}
-                    </time>
-                  </div>
-                  <div class="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+                    <time>{format(new Date(post.data.date), "MMM d, yyyy")}</time>
+                  </span>
+                  <span class="inline-flex items-center gap-1">
                     <TimerIcon client:load />
                     {getReadingTime(post.body ?? "")}
-                  </div>
-                  <div class="flex flex-wrap gap-1 sm:gap-1.5">
-                    {post.data.tags.map((tag) => (
-                      <Badge variant="secondary" className="text-[10px] sm:text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+                  </span>
                 </div>
               </CardContent>
             </Card>

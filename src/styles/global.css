@@ -168,27 +168,69 @@
 .prose blockquote {
   @apply border-l-4 border-muted-foreground/30 pl-3 sm:pl-4 italic my-3 sm:my-4;
 }
+/* Inline code */
 .prose code {
-  @apply bg-muted text-foreground px-1 sm:px-1.5 py-0.5 rounded text-sm font-mono;
+  @apply bg-muted text-foreground px-1.5 py-0.5 rounded-md text-[0.8em] font-mono;
   word-break: break-word;
 }
+
+/* Code block — fallback (before JS) */
 .prose pre {
-  @apply rounded-lg p-3 sm:p-4 overflow-x-auto my-3 sm:my-4 border border-border text-sm;
-  background-color: var(--shiki-light-bg, var(--muted)) !important;
+  @apply rounded-xl border border-border overflow-x-auto text-sm my-5 p-4 sm:p-5;
+  background: var(--card) !important;
   -webkit-overflow-scrolling: touch;
 }
-.dark .prose pre {
-  background-color: var(--shiki-dark-bg, oklch(0.205 0 0)) !important;
-}
 .prose pre code {
-  @apply bg-transparent p-0 text-inherit;
+  @apply bg-transparent p-0 rounded-none;
   word-break: normal;
+  font-size: 0.875rem;
+  line-height: 1.7;
 }
 .prose pre code span {
   color: var(--shiki-light) !important;
 }
 .dark .prose pre code span {
   color: var(--shiki-dark) !important;
+}
+
+/* Code block wrapper — injected by JS */
+.code-block {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin: 1.25rem 0;
+}
+.code-copy-btn {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background-color 0.15s;
+}
+.code-block:hover .code-copy-btn {
+  opacity: 1;
+}
+.code-copy-btn:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+/* When wrapped by JS, override fallback styles on pre */
+.code-block pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: var(--card) !important;
 }
 .prose strong {
   @apply font-semibold text-foreground;
