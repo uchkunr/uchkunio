@@ -3,16 +3,14 @@
     {
       "company": "Carlink LLC",
       "website": "carlink.pro",
-      "location": "Tashkent, Uzbekistan",
+      "location": "Tashkent, Uzbekistan · On-site",
       "roles": [
         {
-          "title": "CTO",
+          "title": "Chief Technology Officer",
           "project": "",
           "period": "Dec 2025 – Present",
           "highlights": [
-            "Designed and built the backend architecture for a B2B auto transport platform - multi-tenant data model, REST API, and integration layer with Central Dispatch, SuperDispatch, and QuickBooks",
-            "Owned all infrastructure decisions: stack selection, deployment setup, database schema, and third-party API contracts",
-            "Set up the engineering foundation from scratch - CI/CD, code review process, and dev environment standards for a growing team"
+            "Architected a multi-tenant B2B auto transport platform from scratch - data isolation, live schema migration, zero downtime"
           ]
         }
       ]
@@ -20,63 +18,58 @@
     {
       "company": "Startups DNA",
       "website": "startupsdna.com",
-      "location": "Tashkent, Uzbekistan",
+      "location": "Tashkent, Uzbekistan · Hybrid",
       "roles": [
         {
-          "title": "Backend Developer",
+          "title": "Back End Developer",
           "project": "Assetsy",
-          "period": "Nov 2025 – Dec 2025",
+          "period": "Aug 2025 – Oct 2025",
           "highlights": [
-            "Architecting v2 API redesign for Fastify-based microservice with improved endpoint structure and error handling across MongoDB transactions",
-            "Implemented database indexing strategies and query optimization for high-traffic endpoints",
-            "Executing zero-downtime migrations to restructure database schemas while maintaining backward compatibility"
+            "Architected v2 API redesign for Fastify-based microservice with improved endpoint structure and error handling",
+            "Implemented database indexing and query optimization for performance-critical endpoints",
+            "Executed zero-downtime schema migrations while maintaining backward compatibility"
           ]
         },
         {
-          "title": "Backend Developer",
+          "title": "Back End Developer",
           "project": "PillPlan",
-          "period": "Aug 2025 – Nov 2025",
+          "period": "Aug 2025 – Oct 2025",
           "highlights": [
             "Built automated medication reminder system using GCP Cloud Tasks for scheduled push notifications via APNs",
             "Implemented queue-based notification architecture with retry logic for failed deliveries",
-            "Established CI/CD pipeline using GitHub Actions for automated admin panel deployment",
-            "Optimized MongoDB aggregation pipelines for improved query performance"
+            "Refactored existing codebase following clean code principles across NestJS monorepo (Nx workspace)"
           ]
         }
       ]
     },
     {
-      "company": "Numeo.ai",
+      "company": "Numeo",
       "website": "numeo.ai",
-      "location": "Tashkent, Uzbekistan",
+      "location": "Seattle, Washington, United States · Remote",
       "roles": [
         {
-          "title": "Backend Developer",
+          "title": "Software Engineer",
           "project": "",
           "period": "May 2025 – Jul 2025",
           "highlights": [
-            "Led backend development for Chrome extension serving 1,000+ active users",
-            "Built scalable backend infrastructure on GCP + MongoDB supporting real-time load filtering and AI integration",
-            "Implemented production monitoring and on-call system using GCP logging",
-            "Established error tracking and alerting system for production stability"
+            "Led development of a Chrome extension serving ~1k active users",
+            "Served in on-call rotation, using GCP logging for production debugging and incident response"
           ]
         }
       ]
     },
     {
-      "company": "Freelancer",
+      "company": "Freelance | Self-Employed",
       "website": "",
-      "location": "Tashkent, Uzbekistan",
+      "location": "Tashkent, Uzbekistan · Remote",
       "roles": [
         {
-          "title": "Fullstack Developer",
+          "title": "Full Stack Engineer",
           "project": "",
           "period": "Dec 2023 – May 2025",
           "highlights": [
-            "Built TedbookCRM from scratch - Express.js + TypeScript + MongoDB, serving 10+ users with 600+ total orders",
-            "Developed WiFi Captive Portal handling 1,000+ daily registrations across 14 branches",
-            "Built VoIP middleware connecting Asterisk systems with real-time call monitoring",
-            "Customized Chatwoot for client deployments - auth system, media handling, integrations"
+            "Architected and delivered full-scale production systems across CRM, VoIP, and WiFi authentication domains — including systems serving 50k+ users",
+            "Deepened expertise in system design, payments, and domain-specific protocols (VoIP, captive portal networking) through end-to-end ownership of real-world projects"
           ]
         }
       ]
@@ -84,31 +77,15 @@
     {
       "company": "East Telecom",
       "website": "etc.uz",
-      "location": "Tashkent, Uzbekistan",
+      "location": "Tashkent, Uzbekistan · On-site",
       "roles": [
         {
           "title": "Software Engineer",
           "project": "",
           "period": "Jun 2022 – Apr 2024",
           "highlights": [
-            "Rebuilt high-traffic Telegram bot using PHP/Laravel + Nutgram framework",
-            "Serving 60+ concurrent users processing 300+ daily requests",
-            "Contributed to CRM/BPM systems using Odoo and Jira platforms"
-          ]
-        }
-      ]
-    },
-    {
-      "company": "Phoenix Systems",
-      "website": "light.uz",
-      "location": "Tashkent, Uzbekistan",
-      "roles": [
-        {
-          "title": "Frontend Developer",
-          "project": "",
-          "period": "Jan 2022 – Apr 2022",
-          "highlights": [
-            "Redesigned and modernized the UI of an e-commerce platform, improving overall customer experience"
+            "Rebuilt a Telegram bot from Google Apps Script to PHP/Laravel, now actively serving ~60 concurrent users and processing ~300 daily requests",
+            "Developed frontend components for 4 internal CRM/BPM systems"
           ]
         }
       ]

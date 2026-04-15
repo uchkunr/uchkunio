@@ -11,6 +11,9 @@ import {
   TbBrandLinkedin,
   TbMail,
   TbCircle,
+  TbClock,
+  TbTool,
+  TbBook,
 } from "react-icons/tb";
 
 const menuItems = [
@@ -18,6 +21,9 @@ const menuItems = [
   { label: "X/O", href: "/xo", icon: <TbCircle size={20} /> },
   { label: "Projects", href: "/projects", icon: <TbCode size={20} /> },
   { label: "Blog", href: "/blog", icon: <TbNotebook size={20} /> },
+  { label: "Now", href: "/now", icon: <TbClock size={20} /> },
+  { label: "Uses", href: "/uses", icon: <TbTool size={20} /> },
+  { label: "Reading", href: "/reading", icon: <TbBook size={20} /> },
   {
     label: "Resume",
     href: "https://docs.google.com/document/d/1urFr8PbkJc7hbxIc53rLXC0qdW0sCjIwkt84ONxhhFY/edit?usp=sharing",

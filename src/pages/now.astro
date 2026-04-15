@@ -1,0 +1,91 @@
+---
+export const prerender = true;
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import { format } from "date-fns";
+
+const lastUpdated = "2026-04-15";
+
+const sections = [
+  {
+    label: "Building",
+    items: [
+      "The multi-tenant architecture at Carlink — pushing on data isolation, live schema migration, and zero-downtime cutovers.",
+      "An open-source toolkit for Claude Code hooks. First package shipped, more on the way.",
+    ],
+  },
+  {
+    label: "Learning",
+    items: [
+      "Going deeper on Postgres internals — lock contention, query plans, and connection pooling under load.",
+      "Reading more about distributed systems patterns — saga, outbox, idempotency keys.",
+    ],
+  },
+  {
+    label: "Writing",
+    items: [
+      "Aiming for one essay every two weeks on the blog. Topics in the queue: connection pool sizing, idempotency, and what I learned designing for tenant isolation.",
+    ],
+  },
+  {
+    label: "Outside the screen",
+    items: [
+      "Coffee, long walks, and trying to read more on paper than on a phone.",
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Now"
+  description="What I'm working on, learning, and thinking about right now."
+>
+  <Breadcrumbs items={[{ name: "Now", href: "/now" }]} />
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
+    <a
+      href="/"
+      class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
+    >
+      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
+      Back to home
+    </a>
+
+    <header class="mb-8 sm:mb-12 animate-fade-in">
+      <p class="text-sm font-medium text-muted-foreground mb-2">now</p>
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+        What I'm doing right now
+      </h1>
+      <p class="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl">
+        A snapshot — not a resume, not a feed. The handful of things actually
+        on my mind this season. Inspired by Derek Sivers' <a
+          href="https://nownownow.com/about"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline underline-offset-2 hover:text-foreground transition-colors"
+          >/now page movement</a
+        >.
+      </p>
+    </header>
+
+    <div class="space-y-8 sm:space-y-10 animate-fade-in-delay-1">
+      {sections.map((s) => (
+        <section>
+          <h2 class="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-3">{s.label}</h2>
+          <ul class="space-y-2.5">
+            {s.items.map((item) => (
+              <li class="flex gap-3 text-sm sm:text-base text-foreground/90 leading-relaxed">
+                <span class="shrink-0 mt-[10px] h-1 w-1 rounded-full bg-primary/60" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+
+    <div class="mt-12 pt-6 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+      <span>Last updated {format(new Date(lastUpdated), "MMMM d, yyyy")}</span>
+      <a href="/uses" class="hover:text-foreground transition-colors">tools I use →</a>
+    </div>
+  </div>
+</BaseLayout>

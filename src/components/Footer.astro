@@ -4,26 +4,32 @@ import { SOCIAL_LINKS } from "@/config/site";
 ---
 
 <footer class="border-t border-border/40">
-  <div
-    class="mx-auto flex max-w-3xl flex-col items-center gap-3 sm:gap-4 px-4 py-6 sm:py-8 sm:flex-row sm:justify-between sm:px-6"
-  >
-    <p class="text-xs sm:text-sm text-muted-foreground">
-      &copy; {new Date().getFullYear()} Uchkun Rakhimov
-    </p>
-    <div class="flex items-center gap-4">
-      {
-        SOCIAL_LINKS.map((link) => (
-          <a
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-muted-foreground transition-colors hover:text-foreground"
-            aria-label={link.label}
-          >
-            <SocialIcon icon={link.icon} size={18} client:load />
-          </a>
-        ))
-      }
+  <div class="mx-auto max-w-3xl px-4 py-6 sm:py-8 sm:px-6">
+    <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-5 sm:mb-6 text-xs sm:text-sm">
+      <a href="/now" class="text-muted-foreground hover:text-foreground transition-colors">now</a>
+      <a href="/uses" class="text-muted-foreground hover:text-foreground transition-colors">uses</a>
+      <a href="/reading" class="text-muted-foreground hover:text-foreground transition-colors">reading</a>
+      <a href="/rss.xml" class="text-muted-foreground hover:text-foreground transition-colors">rss</a>
+    </div>
+    <div class="flex flex-col items-center gap-3 sm:gap-4 sm:flex-row sm:justify-between">
+      <p class="text-xs sm:text-sm text-muted-foreground">
+        &copy; {new Date().getFullYear()} Uchkun Rakhimov
+      </p>
+      <div class="flex items-center gap-4">
+        {
+          SOCIAL_LINKS.map((link) => (
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={link.label}
+            >
+              <SocialIcon icon={link.icon} size={18} client:load />
+            </a>
+          ))
+        }
+      </div>
     </div>
   </div>
 </footer>

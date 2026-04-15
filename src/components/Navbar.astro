@@ -53,6 +53,17 @@ const pathname = Astro.url.pathname;
         blog
       </a>
       <a
+        href="/now"
+        class:list={[
+          "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+          pathname === "/now"
+            ? "bg-accent text-accent-foreground"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+        ]}
+      >
+        now
+      </a>
+      <a
         href={RESUME_URL}
         target="_blank"
         rel="noopener noreferrer"

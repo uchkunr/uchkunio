@@ -1,0 +1,111 @@
+---
+export const prerender = true;
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+
+const groups = [
+  {
+    label: "Editor & Terminal",
+    items: [
+      { name: "VS Code", note: "primary editor — vim keybindings, GitHub theme" },
+      { name: "Cursor", note: "for AI-assisted refactors and quick prototyping" },
+      { name: "Ghostty", note: "fast, native terminal" },
+      { name: "Zsh + Starship", note: "minimal prompt, fast" },
+      { name: "tmux", note: "for long-running sessions over SSH" },
+    ],
+  },
+  {
+    label: "Languages & Runtime",
+    items: [
+      { name: "TypeScript", note: "strict mode, always" },
+      { name: "Node.js & Bun", note: "Node for production, Bun for tooling" },
+      { name: "Go", note: "for the occasional CLI or systems job" },
+    ],
+  },
+  {
+    label: "Backend & Data",
+    items: [
+      { name: "PostgreSQL", note: "first choice for almost everything" },
+      { name: "MongoDB", note: "when the data is genuinely document-shaped" },
+      { name: "Redis", note: "caching, queues, rate limiting" },
+      { name: "Fastify", note: "preferred HTTP framework" },
+      { name: "Prisma / Drizzle", note: "depending on the project" },
+    ],
+  },
+  {
+    label: "Infrastructure",
+    items: [
+      { name: "Google Cloud Platform", note: "Cloud Run, Cloud Tasks, Pub/Sub" },
+      { name: "Vercel", note: "for frontend deployments" },
+      { name: "Docker", note: "multi-stage builds, BuildKit" },
+      { name: "GitHub Actions", note: "CI/CD" },
+      { name: "Upstash Redis", note: "serverless redis when latency allows" },
+    ],
+  },
+  {
+    label: "Frontend",
+    items: [
+      { name: "React + Astro", note: "Astro for content sites, React when interactive" },
+      { name: "Tailwind CSS", note: "v4" },
+      { name: "shadcn/ui", note: "starting point for components" },
+    ],
+  },
+  {
+    label: "Daily drivers",
+    items: [
+      { name: "MacBook Pro 14\"", note: "M-series" },
+      { name: "Linear", note: "issues and planning" },
+      { name: "Notion / Obsidian", note: "long notes vs daily notes" },
+      { name: "Raycast", note: "launcher, snippets, window management" },
+      { name: "Arc", note: "browser" },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Uses"
+  description="The tools, languages, and gear I use day to day."
+>
+  <Breadcrumbs items={[{ name: "Uses", href: "/uses" }]} />
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
+    <a
+      href="/"
+      class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
+    >
+      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
+      Back to home
+    </a>
+
+    <header class="mb-8 sm:mb-12 animate-fade-in">
+      <p class="text-sm font-medium text-muted-foreground mb-2">uses</p>
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+        What I use
+      </h1>
+      <p class="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl">
+        Software, services, and gear I reach for most days. Updated when something
+        actually changes — not seasonally.
+      </p>
+    </header>
+
+    <div class="space-y-10 animate-fade-in-delay-1">
+      {groups.map((g) => (
+        <section>
+          <h2 class="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-4">{g.label}</h2>
+          <ul class="divide-y divide-border/40 border-y border-border/40">
+            {g.items.map((it) => (
+              <li class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 py-3">
+                <span class="text-sm sm:text-base font-medium">{it.name}</span>
+                <span class="text-xs sm:text-sm text-muted-foreground sm:text-right sm:max-w-md">{it.note}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+
+    <div class="mt-12 pt-6 border-t border-border/40 text-xs text-muted-foreground">
+      Inspired by <a href="https://uses.tech" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:text-foreground transition-colors">uses.tech</a>.
+    </div>
+  </div>
+</BaseLayout>

@@ -70,46 +70,72 @@ const articleSchema = {
   >
   </div>
 
-  <article class="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-16">
-    <!-- Back Link -->
-    <a
-      href="/blog"
-      class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
+  <!-- Full-bleed Hero -->
+  <section class="relative w-full overflow-hidden isolate -mt-14 pt-14 min-h-[70vh] sm:min-h-[80vh] flex items-end animate-fade-in">
+    <!-- Background image / fallback -->
+    {post.data.cover ? (
+      <img
+        src={post.data.cover}
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 -z-20 h-full w-full object-cover object-center scale-105"
+      />
+    ) : (
+      <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_20%_20%,hsl(var(--primary)/0.35),transparent_55%),radial-gradient(circle_at_80%_60%,hsl(var(--primary)/0.25),transparent_50%),linear-gradient(135deg,hsl(var(--muted)),hsl(var(--background)))]">
+      </div>
+    )}
+    <!-- Grid pattern overlay -->
+    <div
+      class="absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay"
+      style="background-image: linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px); background-size: 48px 48px;"
+      aria-hidden="true"
     >
-      <BackIcon client:load />
-      Back to blog
-    </a>
+    </div>
+    <!-- Gradient overlays for readability + fade to page background -->
+    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/80 to-background/30" aria-hidden="true"></div>
+    <div class="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-background to-transparent" aria-hidden="true"></div>
 
-    <!-- Hero Illustration -->
-    <!-- Header -->
-    <header class="mb-6 sm:mb-8 animate-fade-in">
-      <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
-        <span class="inline-flex items-center gap-1.5">
-          <CalendarIcon client:load />
-          <time>{format(new Date(post.data.date), "MMMM d, yyyy")}</time>
-        </span>
-        <span class="inline-flex items-center gap-1.5">
-          <TimerIcon client:load />
-          {readingTime}
-        </span>
-      </div>
-      <h1 class="mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-        {post.data.title}
-      </h1>
-      <p class="mt-2 sm:mt-3 text-sm sm:text-lg text-muted-foreground">
-        {post.data.excerpt}
-      </p>
-      <div class="mt-3 sm:mt-4 flex flex-wrap gap-1.5">
-        {post.data.tags.map((tag: string) => (
-          <a
-            href={`/blog/tags/${tag}`}
-            class="px-2.5 py-1 rounded-full text-xs font-medium text-muted-foreground border border-border hover:border-foreground/30 hover:text-foreground transition-colors"
-          >
-            {tag}
-          </a>
-        ))}
-      </div>
-    </header>
+    <!-- Title container -->
+    <div class="relative mx-auto w-full max-w-3xl px-4 sm:px-6 pt-24 sm:pt-32 pb-10 sm:pb-14">
+      <a
+        href="/blog"
+        class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
+      >
+        <BackIcon client:load />
+        Back to blog
+      </a>
+      <header>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
+          <span class="inline-flex items-center gap-1.5">
+            <CalendarIcon client:load />
+            <time>{format(new Date(post.data.date), "MMMM d, yyyy")}</time>
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <TimerIcon client:load />
+            {readingTime}
+          </span>
+        </div>
+        <h1 class="mt-3 sm:mt-4 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] drop-shadow-sm">
+          {post.data.title}
+        </h1>
+        <p class="mt-3 sm:mt-4 text-sm sm:text-lg text-muted-foreground max-w-2xl">
+          {post.data.excerpt}
+        </p>
+        <div class="mt-4 sm:mt-5 flex flex-wrap gap-1.5">
+          {post.data.tags.map((tag: string) => (
+            <a
+              href={`/blog/tags/${tag}`}
+              class="px-2.5 py-1 rounded-full text-xs font-medium bg-background/60 backdrop-blur-sm text-muted-foreground border border-border hover:border-foreground/30 hover:text-foreground transition-colors"
+            >
+              {tag}
+            </a>
+          ))}
+        </div>
+      </header>
+    </div>
+  </section>
+
+  <article class="mx-auto max-w-3xl px-4 sm:px-6 pb-8 sm:pb-16">
 
     <!-- Table of Contents -->
     {

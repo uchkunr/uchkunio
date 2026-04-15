@@ -97,19 +97,27 @@ const past = EXPERIENCE.slice(1);
           </div>
 
           <!-- Info -->
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-              <span class="text-sm font-semibold truncate">{job.company}</span>
-              <span class="hidden sm:inline text-muted-foreground/40 text-xs">·</span>
-              <span class="text-xs text-muted-foreground truncate">
-                {job.roles.map(r => `${r.title}${r.project ? ` — ${r.project}` : ""}`).join(", ")}
-              </span>
-            </div>
-            <p class="text-xs text-muted-foreground mt-0.5 tabular-nums">
-              {job.roles[0].period}
-              {job.roles.length > 1 && ` · ${job.roles.length} roles`}
-            </p>
-          </div>
+          {(() => {
+            const uniqueTitles = [...new Set(job.roles.map(r => r.title))];
+            const sameTitle = uniqueTitles.length === 1;
+            const projects = job.roles.map(r => r.project).filter(Boolean) as string[];
+            const summary = sameTitle
+              ? (projects.length > 0 ? `${uniqueTitles[0]} · ${projects.join(" · ")}` : uniqueTitles[0])
+              : job.roles.map(r => `${r.title}${r.project ? ` — ${r.project}` : ""}`).join(", ");
+            return (
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                  <span class="text-sm font-semibold truncate">{job.company}</span>
+                  <span class="hidden sm:inline text-muted-foreground/40 text-xs">·</span>
+                  <span class="text-xs text-muted-foreground truncate">{summary}</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-0.5 tabular-nums">
+                  {job.roles[0].period}
+                  {job.roles.length > 1 && ` · ${job.roles.length} roles`}
+                </p>
+              </div>
+            );
+          })()}
 
           <!-- Chevron -->
           <svg

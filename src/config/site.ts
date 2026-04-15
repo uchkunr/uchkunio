@@ -44,9 +44,9 @@ export const RESUME_URL =
 export const BIO = {
   name: "Uchkun Rakhimov",
   title: "Backend Engineer",
-  subtitle: "specializing in scalable distributed systems",
+  subtitle: "currently CTO at Carlink, based in Tashkent",
   description:
-    "I'm a backend engineer with 3+ years of experience building scalable, high-performance systems. My core stack includes Node.js, TypeScript, and frameworks like NestJS, Express, and Fastify, backed by PostgreSQL and MongoDB. I architect distributed services on GCP, implement robust CI/CD pipelines, and maintain comprehensive monitoring and logging. On the frontend, I work with React.js to deliver complete, end-to-end solutions.",
+    "I build the quiet half of software — the part that doesn't break on Fridays and doesn't wake anyone at 3am. Mostly I think about how systems age: what makes a service survive its tenth migration, and what makes \"it works\" eventually become \"it's good.\" I write here about what I learn along the way.",
 } as const;
 
 import experienceData from "../content/experience.json";
