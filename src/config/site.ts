@@ -48,9 +48,6 @@ export const BIO = {
     "I build the quiet half of software — the part that doesn't break on Fridays and doesn't wake anyone at 3am. Mostly I think about how systems age: what makes a service survive its tenth migration, and what makes \"it works\" eventually become \"it's good.\" I write here about what I learn along the way.",
 } as const;
 
-import experienceData from "../content/experience.json";
-export const EXPERIENCE = experienceData.jobs;
-
 export const PROJECTS: readonly Project[] = [
   // ── Work projects ──────────────────────────────────────────
   {

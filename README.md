@@ -1,13 +1,14 @@
 # uchkun.io
 
-Personal portfolio and blog. Built with Astro, React, Tailwind CSS v4. Deployed on Vercel.
+Personal site and blog. A single-page bio with a writing section.
 
 ## Stack
 
-- **Astro 6** — SSR with static prerendering
-- **React** — interactive components
-- **Tailwind CSS v4** — styling
-- **Bun** — package manager
+- **Astro 6** - SSR with static prerendering
+- **React 19** - interactive components
+- **Tailwind CSS v4** - styling
+- **Bun** - package manager
+- **Vercel** - hosting
 
 ## Development
 
@@ -18,9 +19,15 @@ bun dev
 
 Open [localhost:4321](http://localhost:4321).
 
+## Structure
+
+- `/` - bio and technical work
+- `/blog` - writing
+- `/admin` - custom admin panel for publishing posts
+
 ## Admin
 
-Custom admin panel at `/admin`. Password-protected, writes content to GitHub via API.
+Password-protected. Writes Markdown posts to GitHub via API.
 
 ```sh
 cp .env.example .env
@@ -40,7 +47,7 @@ Upstash: [upstash.com](https://upstash.com) → Create Database → REST API.
 ### Security model
 
 - All `/admin` and `/api/admin` routes are protected by middleware
-- Session token is HMAC-SHA256 derived from `ADMIN_SECRET` — changing the secret invalidates all sessions
+- Session token is HMAC-SHA256 derived from `ADMIN_SECRET` - changing the secret invalidates all sessions
 - Password and token comparisons use constant-time equality to prevent timing attacks
 - Failed logins have a fixed 500ms delay to slow brute force
 - **3 failed attempts = IP blocked for 7 days** (via Upstash Redis)
@@ -49,16 +56,6 @@ Upstash: [upstash.com](https://upstash.com) → Create Database → REST API.
 
 ## Contributing
 
-This is a personal portfolio. PRs are not accepted for content changes (blog posts, bio, experience).
+This is a personal site. PRs are not accepted for content changes (blog posts, bio).
 
-Bug fixes and technical improvements are welcome — open an issue first.
-
-**Before submitting a PR:**
-
-- `bun dev` runs without errors or warnings
-- Code follows the existing style — no new dependencies without discussion
-- Commits follow [Conventional Commits](https://www.conventionalcommits.org): `feat:`, `fix:`, `chore:`, etc.
-- One concern per PR — no bundling unrelated changes
-- Do not leave `console.log`, commented-out code, or TODOs
-
-PRs that ignore these rules will be closed without review.
+Bug fixes and technical improvements are welcome - open an issue first.
