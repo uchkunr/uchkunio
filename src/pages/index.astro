@@ -1,25 +1,13 @@
 ---
 export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { Card, CardContent } from "@/components/ui/card";
-import Experience from "@/components/Experience.astro";
-import SocialIcon from "@/components/icons/SocialIcons";
-import { ArrowRightIcon, CalendarIcon, TimerIcon } from "@/components/icons/NavIcons";
 import { BIO, SOCIAL_LINKS, SITE } from "@/config/site";
-import { getCollection } from "astro:content";
-import { format } from "date-fns";
-import { getReadingTime } from "@/lib/reading-time";
-
-const allPosts = await getCollection("blog");
-const latestPosts = allPosts
-  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
-  .slice(0, 3);
 
 const personSchema = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: "Uchkun Rakhimov",
-  alternateName: ["uchkunio", "uchkunrakhimow", "Uchkun I/O"],
+  alternateName: ["uchkunio", "uchkunr", "Uchkun I/O"],
   url: SITE.url,
   jobTitle: "Backend Engineer",
   description: SITE.description,
@@ -41,43 +29,6 @@ const websiteSchema = {
   url: SITE.url,
   description: SITE.description,
   author: { "@type": "Person", name: "Uchkun Rakhimov" },
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${SITE.url}/blog?search={search_term_string}`,
-    },
-    "query-input": "required name=search_term_string",
-  },
-};
-
-const navigationSchema = {
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  name: "Site Navigation",
-  itemListElement: [
-    {
-      "@type": "SiteNavigationElement",
-      position: 1,
-      name: "Home",
-      description: "About Uchkun Rakhimov — Backend Engineer",
-      url: SITE.url,
-    },
-    {
-      "@type": "SiteNavigationElement",
-      position: 2,
-      name: "Projects",
-      description: "Selected projects and systems built by Uchkun Rakhimov",
-      url: `${SITE.url}/projects`,
-    },
-    {
-      "@type": "SiteNavigationElement",
-      position: 3,
-      name: "Blog",
-      description: "Technical articles about backend engineering, Node.js, and TypeScript",
-      url: `${SITE.url}/blog`,
-    },
-  ],
 };
 ---
 
@@ -85,14 +36,9 @@ const navigationSchema = {
   <Fragment slot="default">
     <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
-    <script type="application/ld+json" set:html={JSON.stringify(navigationSchema)} />
 
     <div class="mx-auto max-w-3xl px-4 sm:px-6">
-      <!-- Hero / About -->
-      <section class="py-10 sm:py-24 animate-fade-in">
-        <p class="text-sm font-medium text-muted-foreground mb-4 sm:mb-5">about</p>
-
-        <!-- Avatar -->
+      <section class="pt-6 pb-10 sm:pt-10 sm:pb-16 animate-fade-in">
         <div class="relative h-16 w-16 sm:h-20 sm:w-20 mb-4 sm:mb-5 rounded-full overflow-hidden ring-1 ring-foreground/10 bg-gradient-to-br from-primary/30 via-primary/10 to-muted">
           <span
             class="absolute inset-0 flex items-center justify-center text-lg sm:text-xl font-semibold text-foreground/70 select-none"
@@ -101,7 +47,7 @@ const navigationSchema = {
             UR
           </span>
           <img
-            src="/me.jpg"
+            src="https://avatars.githubusercontent.com/u/105480357?v=4"
             alt={BIO.name}
             class="absolute inset-0 h-full w-full object-cover"
             onerror="this.style.display='none'"
@@ -113,95 +59,74 @@ const navigationSchema = {
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 sm:mb-4">
           {BIO.name}
         </h1>
-        <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
-          <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/80">
-            <span class="h-1.5 w-1.5 rounded-full bg-primary/70"></span>
-            {BIO.title}
-          </span>
-          <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/80">
-            <span class="relative flex h-1.5 w-1.5">
-              <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping"></span>
-              <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-            </span>
-            CTO at Carlink
-          </span>
-          <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/80">
-            <svg class="h-3 w-3 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            Tashkent
-          </span>
-        </div>
-        <p class="text-sm sm:text-base text-muted-foreground leading-relaxed sm:leading-7 max-w-2xl">
-          {BIO.description}
-        </p>
 
-        <!-- Social Links -->
-        <div class="mt-5 sm:mt-6 flex flex-wrap gap-2 sm:gap-3 animate-fade-in-delay-1">
-          {
-            SOCIAL_LINKS.map((link) => (
-              <a
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-1.5 sm:gap-2 rounded-md border border-input bg-background px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                <SocialIcon icon={link.icon} size={16} client:load />
-                {link.label}
-              </a>
-            ))
-          }
+        <div class="prose prose-neutral dark:prose-invert max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed sm:leading-7 space-y-4 sm:space-y-5">
+          <p>
+            I'm a backend engineer and CTO at <a href="https://carlink.pro" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Carlink</a>.
+            I'm from Tashkent, Uzbekistan. I've been building production systems since 2021.
+          </p>
+
+          <p>
+            I started out at <a href="https://etc.uz" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">East Telecom</a>,
+            where I rewrote an old Google Apps Script Telegram bot into a Laravel service.
+            It still runs today. After a couple of years there, I went freelance.
+          </p>
+
+          <p>
+            The freelance period was where I learned the most. I built systems end-to-end for small
+            companies: a courier CRM, a WiFi authentication portal across 14 branch offices, a VoIP
+            middleware for a call center.
+          </p>
+
+          <p>
+            More recently I worked remotely for <a href="https://numeo.ai" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Numeo.ai</a>
+            on their Chrome extension backend on GCP, and spent a few months at
+            <a href="https://startupsdna.com" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Startups DNA</a>
+            redesigning Fastify APIs and building notification infrastructure on Google Cloud Tasks.
+            Since late 2025, I've been CTO at Carlink, an auto transport platform serving the US
+            B2B market.
+          </p>
+        </div>
+
+        <div class="mt-10 sm:mt-14">
+          <h2 class="text-sm font-medium text-muted-foreground mb-4 sm:mb-5">technical work</h2>
+          <ul class="space-y-3 sm:space-y-3.5 text-sm sm:text-base text-muted-foreground leading-relaxed sm:leading-7 max-w-2xl list-disc pl-5 marker:text-muted-foreground/40">
+            <li>
+              Architected <a href="https://carlink.pro" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Carlink</a>,
+              a multi-tenant B2B auto transport platform with integrations into Central Dispatch,
+              SuperDispatch, and QuickBooks.
+            </li>
+            <li>
+              Built TedbookCRM, a courier CRM with multi-role access, real-time order tracking
+              over Socket.IO, and Firebase push notifications to driver mobile apps. Currently
+              processes 50+ orders a day.
+            </li>
+            <li>
+              Built a WiFi captive portal handling OTP authentication across 14 branch offices
+              through the Ubiquiti UniFi Controller API, serving around a thousand sessions daily.
+            </li>
+            <li>
+              Built a Node.js middleware bridging Asterisk PBX with a live operator dashboard,
+              supporting 60+ concurrent agents at sub-second latency.
+            </li>
+            <li>
+              Led the v2 API redesign for Assetsy, a Fastify-based asset management microservice
+              at Startups DNA.
+            </li>
+            <li>
+              Built PillPlan's notification engine using GCP Cloud Tasks and APNs, with retry
+              logic for failed deliveries.
+            </li>
+          </ul>
+        </div>
+
+        <div class="mt-8 sm:mt-10 text-sm sm:text-base text-muted-foreground leading-relaxed sm:leading-7 max-w-2xl">
+          <p>
+            I write on <a href="/blog" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">the blog</a>.
+            Email is <a href="mailto:uchkunrakhimov@gmail.com" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">uchkunrakhimov@gmail.com</a>.
+          </p>
         </div>
       </section>
-
-      <!-- Experience -->
-      <Experience />
-
-      <!-- Latest Posts -->
-      {
-        latestPosts.length > 0 && (
-          <section class="pb-12 sm:pb-16 animate-fade-in-delay-3">
-            <div class="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 class="text-sm font-medium text-muted-foreground">
-                latest posts
-              </h2>
-              <a
-                href="/blog"
-                class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                view all
-                <ArrowRightIcon client:load />
-              </a>
-            </div>
-            <div class="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
-              {latestPosts.map((post) => (
-                <a href={`/blog/${post.id}`} class="group block">
-                  <Card className="h-full transition-colors hover:bg-accent/50 py-0">
-                    <CardContent className="p-3 sm:p-3.5">
-                      <div class="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span class="inline-flex items-center gap-1">
-                          <CalendarIcon client:load />
-                          <time>
-                            {format(new Date(post.data.date), "MMM d, yyyy")}
-                          </time>
-                        </span>
-                        <span class="inline-flex items-center gap-1">
-                          <TimerIcon client:load />
-                          {getReadingTime(post.body ?? "")}
-                        </span>
-                      </div>
-                      <h3 class="mt-1.5 text-sm sm:text-base font-medium leading-snug group-hover:text-primary transition-colors">
-                        {post.data.title}
-                      </h3>
-                      <p class="mt-1 sm:mt-1.5 text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                        {post.data.excerpt}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </a>
-              ))}
-            </div>
-          </section>
-        )
-      }
     </div>
   </Fragment>
 </BaseLayout>

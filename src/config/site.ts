@@ -11,14 +11,13 @@ export const SITE = {
 } as const;
 
 export const NAV_LINKS = [
-  { label: "projects", href: "/projects" },
   { label: "blog", href: "/blog" },
 ] as const;
 
 export const SOCIAL_LINKS = [
   {
     label: "GitHub",
-    href: "https://github.com/uchkunrakhimow",
+    href: "https://github.com/uchkunr",
     icon: "github",
   },
   {
@@ -78,7 +77,7 @@ export const PROJECTS: readonly Project[] = [
       "High-throughput guest Wi-Fi authentication system deployed across 14 branch locations. OTP-based SMS verification with automatic session provisioning via the UniFi Controller API. Built with zero manual configuration overhead after initial deployment.",
     tech: ["Node.js", "TypeScript", "MySQL", "Sequelize", "UniFi API"],
     metrics: "1,000+ daily sessions · 14 branch locations",
-    github: "https://github.com/uchkunrakhimow/otpgate-unifi",
+    github: "https://github.com/uchkunr/otpgate-unifi",
   },
   {
     type: "work",
@@ -103,7 +102,7 @@ export const PROJECTS: readonly Project[] = [
       "Node.js middleware bridging Asterisk PBX with a custom operator dashboard. Live call monitoring, spy/whisper mode, pause controls, and intelligent queue routing — all over a WebSocket event stream with sub-second latency. Open-sourced the Asterisk AMI client as a standalone package.",
     tech: ["Node.js", "TypeScript", "Asterisk AMI", "WebSocket"],
     metrics: "60+ concurrent agents · sub-second latency",
-    github: "https://github.com/uchkunrakhimow/NodeJS-AsteriskManager",
+    github: "https://github.com/uchkunr/NodeJS-AsteriskManager",
   },
   {
     type: "work",
@@ -122,7 +121,7 @@ export const PROJECTS: readonly Project[] = [
       "Comprehensive developer reference for the Ubiquiti UniFi Controller API — the documentation the official docs should have been. Covers authentication, device management, client operations, VLAN config, real-time WebSocket events, and DPI analytics with working Node.js examples.",
     tech: ["Node.js", "JavaScript", "UniFi API"],
     metrics: "17 stars · 1 fork",
-    github: "https://github.com/uchkunrakhimow/unifi-best-practices",
+    github: "https://github.com/uchkunr/unifi-best-practices",
   },
   {
     type: "oss",
@@ -130,7 +129,7 @@ export const PROJECTS: readonly Project[] = [
     description:
       "HR candidate screening REST API built with Bun + Elysia.js. Multi-tenant organization support, candidate lifecycle management, multilingual question banking, JWT auth, and PDF result exports. Structured for rapid deployment with Prisma + PostgreSQL.",
     tech: ["Bun", "Elysia.js", "TypeScript", "PostgreSQL", "Prisma"],
-    github: "https://github.com/uchkunrakhimow/hrcs-api",
+    github: "https://github.com/uchkunr/hrcs-api",
   },
   {
     type: "oss",
@@ -138,7 +137,7 @@ export const PROJECTS: readonly Project[] = [
     description:
       "Modern authentication platform covering passkeys, OAuth providers, session management, and RBAC. Built as a reference implementation for production-grade auth in TypeScript backends.",
     tech: ["TypeScript", "Node.js", "PostgreSQL"],
-    github: "https://github.com/uchkunrakhimow/auth-kit",
+    github: "https://github.com/uchkunr/auth-kit",
   },
   {
     type: "oss",
@@ -146,7 +145,7 @@ export const PROJECTS: readonly Project[] = [
     description:
       "AI-powered product analysis tool combining Google Cloud Vision API with OpenAI GPT — takes a product image, extracts attributes, and generates structured metadata for e-commerce listings.",
     tech: ["TypeScript", "Google Vision API", "OpenAI"],
-    github: "https://github.com/uchkunrakhimow/vision-shop",
+    github: "https://github.com/uchkunr/vision-shop",
   },
 ] as const;
 

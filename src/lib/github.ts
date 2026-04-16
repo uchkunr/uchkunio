@@ -1,5 +1,5 @@
 const API = "https://api.github.com";
-const OWNER = "uchkunrakhimow";
+const OWNER = "uchkunr";
 const REPO = "uchkunio";
 
 function headers() {
