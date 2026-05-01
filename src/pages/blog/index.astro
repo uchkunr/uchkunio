@@ -26,8 +26,8 @@ const posts = allPosts.sort(
       Back to home
     </a>
     <div class="mb-6 sm:mb-10 animate-fade-in">
-      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Blog</h1>
-      <p class="mt-1.5 sm:mt-2 text-sm sm:text-base text-muted-foreground">
+      <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight">Blog</h1>
+      <p class="mt-1.5 sm:mt-2 text-base text-muted-foreground">
         Thoughts on backend engineering, architecture, and web development.
       </p>
     </div>
@@ -59,13 +59,13 @@ const posts = allPosts.sort(
           >
             <Card className="transition-colors hover:bg-accent/50 py-0">
               <CardContent className="p-3 sm:p-3.5">
-                <h2 class="text-sm sm:text-base font-medium leading-snug group-hover:text-primary transition-colors">
+                <h2 class="text-base font-medium leading-snug group-hover:text-primary transition-colors">
                   {post.data.title}
                 </h2>
-                <p class="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                <p class="mt-1 text-sm text-muted-foreground line-clamp-2">
                   {post.data.excerpt}
                 </p>
-                <div class="mt-2 flex items-center gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                <div class="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
                   <span class="inline-flex items-center gap-1">
                     <CalendarIcon client:load />
                     <time>{format(new Date(post.data.date), "MMM d, yyyy")}</time>

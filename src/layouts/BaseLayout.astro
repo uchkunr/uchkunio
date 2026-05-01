@@ -23,7 +23,10 @@ const props = Astro.props;
 <html lang="en" class="no-fouc">
   <head>
     <SEOHead {...props} />
-    <ClientRouter />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
+<ClientRouter />
     <style is:inline>
       .no-fouc { opacity: 0; }
       .fouc-ready { opacity: 1; transition: opacity 0.15s ease-in; }

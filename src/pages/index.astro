@@ -56,11 +56,11 @@ const websiteSchema = {
           />
         </div>
 
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 sm:mb-4">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight mb-3 sm:mb-4">
           {BIO.name}
         </h1>
 
-        <div class="prose prose-neutral dark:prose-invert max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed sm:leading-7 space-y-4 sm:space-y-5">
+        <div class="prose prose-neutral dark:prose-invert max-w-2xl text-lg text-muted-foreground leading-8 space-y-5">
           <p>
             I'm a backend engineer and CTO at <a href="https://carlink.pro" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Carlink</a>.
             I'm from Tashkent, Uzbekistan. I've been building production systems since 2021.
@@ -89,38 +89,65 @@ const websiteSchema = {
         </div>
 
         <div class="mt-10 sm:mt-14">
-          <h2 class="text-sm font-medium text-muted-foreground mb-4 sm:mb-5">technical work</h2>
-          <ul class="space-y-3 sm:space-y-3.5 text-sm sm:text-base text-muted-foreground leading-relaxed sm:leading-7 max-w-2xl list-disc pl-5 marker:text-muted-foreground/40">
-            <li>
-              Architected <a href="https://carlink.pro" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Carlink</a>,
-              a multi-tenant B2B auto transport platform with integrations into Central Dispatch,
-              SuperDispatch, and QuickBooks.
-            </li>
-            <li>
-              Built TedbookCRM, a courier CRM with multi-role access, real-time order tracking
-              over Socket.IO, and Firebase push notifications to driver mobile apps. Currently
-              processes 50+ orders a day.
-            </li>
-            <li>
-              Built a WiFi captive portal handling OTP authentication across 14 branch offices
-              through the Ubiquiti UniFi Controller API, serving around a thousand sessions daily.
-            </li>
-            <li>
-              Built a Node.js middleware bridging Asterisk PBX with a live operator dashboard,
-              supporting 60+ concurrent agents at sub-second latency.
-            </li>
-            <li>
-              Led the v2 API redesign for Assetsy, a Fastify-based asset management microservice
-              at Startups DNA.
-            </li>
-            <li>
-              Built PillPlan's notification engine using GCP Cloud Tasks and APNs, with retry
-              logic for failed deliveries.
-            </li>
-          </ul>
+          <h2 class="text-base font-medium text-muted-foreground mb-6">technical work</h2>
+          <div class="relative max-w-2xl">
+            <div class="absolute left-[7px] top-1.5 bottom-1.5 w-px bg-border"></div>
+            <div class="space-y-7">
+
+              <div class="relative pl-7">
+                <span class="absolute left-0 top-[7px] h-3.5 w-3.5 rounded-full border-2 border-border bg-background"></span>
+                <p class="font-medium text-foreground leading-snug">Carlink</p>
+                <p class="text-muted-foreground text-base leading-7 mt-0.5">
+                  Multi-tenant B2B auto transport platform. Integrations into Central Dispatch, SuperDispatch, and QuickBooks.
+                  <a href="https://carlink.pro" target="_blank" rel="noopener noreferrer" class="text-foreground/50 hover:text-foreground underline underline-offset-4 decoration-foreground/20 hover:decoration-foreground/50 transition-colors ml-1">carlink.pro ↗</a>
+                </p>
+              </div>
+
+              <div class="relative pl-7">
+                <span class="absolute left-0 top-[7px] h-3.5 w-3.5 rounded-full border-2 border-border bg-background"></span>
+                <p class="font-medium text-foreground leading-snug">TedbookCRM</p>
+                <p class="text-muted-foreground text-base leading-7 mt-0.5">
+                  Courier CRM with multi-role access, real-time order tracking over Socket.IO, and Firebase push notifications to driver apps. Processes 50+ orders a day.
+                </p>
+              </div>
+
+              <div class="relative pl-7">
+                <span class="absolute left-0 top-[7px] h-3.5 w-3.5 rounded-full border-2 border-border bg-background"></span>
+                <p class="font-medium text-foreground leading-snug">WiFi Captive Portal</p>
+                <p class="text-muted-foreground text-base leading-7 mt-0.5">
+                  OTP authentication across 14 branch offices via Ubiquiti UniFi Controller API. ~1,000 sessions daily.
+                </p>
+              </div>
+
+              <div class="relative pl-7">
+                <span class="absolute left-0 top-[7px] h-3.5 w-3.5 rounded-full border-2 border-border bg-background"></span>
+                <p class="font-medium text-foreground leading-snug">Asterisk PBX Middleware</p>
+                <p class="text-muted-foreground text-base leading-7 mt-0.5">
+                  Node.js bridge between Asterisk PBX and a live operator dashboard. 60+ concurrent agents at sub-second latency.
+                </p>
+              </div>
+
+              <div class="relative pl-7">
+                <span class="absolute left-0 top-[7px] h-3.5 w-3.5 rounded-full border-2 border-border bg-background"></span>
+                <p class="font-medium text-foreground leading-snug">Assetsy v2 — Startups DNA</p>
+                <p class="text-muted-foreground text-base leading-7 mt-0.5">
+                  Led the v2 API redesign for a Fastify-based asset management microservice.
+                </p>
+              </div>
+
+              <div class="relative pl-7">
+                <span class="absolute left-0 top-[7px] h-3.5 w-3.5 rounded-full border-2 border-border bg-background"></span>
+                <p class="font-medium text-foreground leading-snug">PillPlan Notification Engine</p>
+                <p class="text-muted-foreground text-base leading-7 mt-0.5">
+                  GCP Cloud Tasks + APNs notification pipeline with retry logic for failed deliveries.
+                </p>
+              </div>
+
+            </div>
+          </div>
         </div>
 
-        <div class="mt-8 sm:mt-10 text-sm sm:text-base text-muted-foreground leading-relaxed sm:leading-7 max-w-2xl">
+        <div class="mt-8 sm:mt-10 text-lg text-muted-foreground leading-8 max-w-2xl">
           <p>
             I write on <a href="/blog" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">the blog</a>.
             Email is <a href="mailto:uchkunrakhimov@gmail.com" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">uchkunrakhimov@gmail.com</a>.
