@@ -28,3 +28,6 @@ pnpm-debug.log*
 
 # package-lock (using bun)
 package-lock.json
+
+# Claude Code internal worktrees
+.claude/worktrees/
