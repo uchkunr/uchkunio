@@ -121,7 +121,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-weight: 300;
+    font-weight: 350;
     font-optical-sizing: auto;
   }
   .dark body {
@@ -129,7 +129,10 @@
   }
   html {
     @apply scroll-smooth font-sans;
-    font-size: 17px;
+    font-size: 15px;
+  }
+  @media (min-width: 640px) {
+    html { font-size: 17px; }
   }
 }
 
@@ -344,4 +347,21 @@
   50% { width: 60%; }
   80% { width: 80%; }
   100% { width: 90%; }
+}
+
+@keyframes theme-icon-exit {
+  from { transform: rotate(0deg) scale(1); opacity: 1; }
+  to   { transform: rotate(-90deg) scale(0); opacity: 0; }
+}
+@keyframes theme-icon-enter {
+  from { transform: rotate(90deg) scale(0); opacity: 0; }
+  to   { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+[data-theme-toggle].icon-exiting {
+  animation: theme-icon-exit 0.15s ease-in forwards;
+  pointer-events: none;
+}
+[data-theme-toggle].icon-entering {
+  animation: theme-icon-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: none;
 }

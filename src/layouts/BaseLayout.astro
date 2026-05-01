@@ -81,7 +81,16 @@ const props = Astro.props;
           var fresh = btn.cloneNode(true);
           btn.parentNode.replaceChild(fresh, btn);
           fresh.addEventListener("click", function () {
-            setTheme(getTheme() === "dark" ? "light" : "dark");
+            var newTheme = getTheme() === "dark" ? "light" : "dark";
+            fresh.classList.add("icon-exiting");
+            setTimeout(function () {
+              setTheme(newTheme);
+              fresh.classList.remove("icon-exiting");
+              fresh.classList.add("icon-entering");
+              fresh.addEventListener("animationend", function () {
+                fresh.classList.remove("icon-entering");
+              }, { once: true });
+            }, 150);
           });
         });
 
