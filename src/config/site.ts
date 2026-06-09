@@ -43,7 +43,7 @@ export const RESUME_URL =
 export const BIO = {
   name: "Uchkun Rakhimov",
   title: "Backend Engineer",
-  subtitle: "currently CTO at Carlink, based in Tashkent",
+  subtitle: "backend engineer · open to work · Tashkent",
   description:
     "I build the quiet half of software — the part that doesn't break on Fridays and doesn't wake anyone at 3am. Mostly I think about how systems age: what makes a service survive its tenth migration, and what makes \"it works\" eventually become \"it's good.\" I write here about what I learn along the way.",
 } as const;
@@ -64,7 +64,7 @@ export const PROJECTS: readonly Project[] = [
     featured: true,
     name: "Carlink B2B Platform",
     description:
-      "Designed the backend architecture for a B2B auto transport marketplace as CTO — multi-tenant data model, REST API, and integration layer with Central Dispatch, SuperDispatch, and QuickBooks. Set up CI/CD, code review process, and dev environment standards from day one.",
+      "Built the backend for a B2B auto transport marketplace — multi-tenant data model, REST API, and integrations with Central Dispatch, SuperDispatch, QuickBooks, RingCentral, and Gmail. Background job processing with Redis queues, OAuth token management, and payment lifecycle handling (PayPal, ConvergePay).",
     tech: ["Node.js", "TypeScript", "PostgreSQL", "Docker", "GitHub Actions"],
   },
   {
