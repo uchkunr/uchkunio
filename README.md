@@ -1,13 +1,8 @@
-# uchkun.io
+# uchkun.io - personal website
+
+![Astro](https://img.shields.io/badge/Astro-v6.0-FF5D01?logo=astro&logoColor=white) ![React](https://img.shields.io/badge/React-v19.0-20232A?logo=react&logoColor=61DAFB) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?logo=tailwind-css&logoColor=white) ![Bun](https://img.shields.io/badge/Bun-v1.0-1f2023?logo=bun&logoColor=fbf0e9) ![Redis](https://img.shields.io/badge/Redis-v7.0-CC0000?logo=redis&logoColor=white) ![Vercel](https://img.shields.io/badge/Vercel-v1.0-000000?logo=vercel&logoColor=white)
 
 Personal portfolio website built with Astro, React, and Tailwind CSS. Hosted on Vercel.
-
-## Stack
-
-- **Framework**: Astro 6 (SSR + hybrid prerendering)
-- **UI**: React 19 + Tailwind CSS v4 + Base UI
-- **Runtime & PM**: Bun
-- **Database**: Upstash Redis (rate limiting & IP blocklists)
 
 ## Development
 
