@@ -4,7 +4,7 @@ import { Font } from "astro:assets";
 import SEOHead from "@/components/SEOHead.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import Analytics from "@/components/Analytics.astro";
+import Analytics from "@vercel/analytics/astro";
 import "@/styles/global.css";
 
 interface Props {
@@ -43,6 +43,9 @@ const { headerTitle, ...seo } = Astro.props;
       <slot />
     </main>
     <Footer />
+    <!-- In <body>, not <head> as Vercel's docs show: it renders a custom element,
+         and the HTML parser ends <head> at the first one it meets, pushing every
+         later head tag (including the stylesheet) into <body>. -->
     <Analytics />
   </body>
 </html>
