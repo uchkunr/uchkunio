@@ -1,7 +1,7 @@
 ---
 export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { BIO, SOCIAL_LINKS, SITE } from "@/config/site";
+import { SOCIAL_LINKS, SITE } from "@/config/site";
 
 const personSchema = {
   "@context": "https://schema.org",
@@ -48,7 +48,7 @@ const websiteSchema = {
           </span>
           <img
             src="https://avatars.githubusercontent.com/u/105480357?v=4"
-            alt={BIO.name}
+            alt={SITE.name}
             class="absolute inset-0 h-full w-full object-cover"
             onerror="this.style.display='none'"
             loading="eager"
@@ -57,7 +57,7 @@ const websiteSchema = {
         </div>
 
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight mb-3 sm:mb-4">
-          {BIO.name}
+          {SITE.name}
         </h1>
 
         <div class="prose prose-neutral dark:prose-invert max-w-2xl text-base sm:text-lg text-muted-foreground leading-7 sm:leading-8 space-y-4 sm:space-y-5">
