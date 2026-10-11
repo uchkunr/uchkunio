@@ -11,24 +11,8 @@ export const SITE = {
 } as const;
 
 export const SOCIAL_LINKS = [
-  {
-    label: "GitHub",
-    href: "https://github.com/uchkunr",
-    icon: "github",
-  },
-  {
-    label: "Twitter",
-    href: "https://twitter.com/uchkunrakhimov",
-    icon: "twitter",
-  },
-  {
-    label: "LinkedIn",
-    href: "https://www.linkedin.com/in/uchkunio",
-    icon: "linkedin",
-  },
-  {
-    label: "Email",
-    href: "mailto:uchkunrakhimov@gmail.com",
-    icon: "mail",
-  },
+  { label: "GitHub", handle: "uchkunr", href: "https://github.com/uchkunr" },
+  { label: "X", handle: "@uchkunrakhimov", href: "https://twitter.com/uchkunrakhimov" },
+  { label: "LinkedIn", handle: "in/uchkunio", href: "https://www.linkedin.com/in/uchkunio" },
+  { label: "Email", handle: "uchkunrakhimov@gmail.com", href: "mailto:uchkunrakhimov@gmail.com" },
 ] as const;

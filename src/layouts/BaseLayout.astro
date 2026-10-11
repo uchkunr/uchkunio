@@ -1,9 +1,9 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import { Font } from "astro:assets";
 import SEOHead from "@/components/SEOHead.astro";
-import Navbar from "@/components/Navbar.astro";
+import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import FloatingControls from "@/components/FloatingControls.astro";
 import Analytics from "@/components/Analytics.astro";
 import "@/styles/global.css";
 
@@ -14,139 +14,227 @@ interface Props {
   type?: "website" | "article";
   publishedDate?: string;
   tags?: string[];
+  /** Shown in the header once the page's own heading scrolls away. */
+  headerTitle?: string;
 }
 
-const props = Astro.props;
+const { headerTitle, ...seo } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" class="no-fouc">
+<html lang="en">
   <head>
-    <SEOHead {...props} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
-<ClientRouter />
-    <style is:inline>
-      .no-fouc { opacity: 0; }
-      .fouc-ready { opacity: 1; transition: opacity 0.15s ease-in; }
-    </style>
+    <SEOHead {...seo} />
+    <Font cssVariable="--font-outfit" preload />
+    <ClientRouter />
     <script is:inline>
+      // Before first paint, so the page never flashes the wrong theme.
       (function () {
-        var t = localStorage.getItem("theme") ||
-          (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        document.documentElement.classList.toggle("dark", t === "dark");
+        var theme =
+          localStorage.getItem("theme") ||
+          (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.classList.toggle("dark", theme === "dark");
       })();
     </script>
   </head>
-  <body class="min-h-screen flex flex-col">
-    <div id="nprogress-bar"></div>
-    <Navbar />
+  <body class="flex min-h-dvh flex-col">
+    <Header title={headerTitle} />
     <main class="flex-1">
       <slot />
     </main>
     <Footer />
-    <FloatingControls />
     <Analytics />
-
-    <script is:inline>
-      function initAll() {
-        // --- Font reveal ---
-        function reveal() {
-          document.documentElement.classList.remove("no-fouc");
-          document.documentElement.classList.add("fouc-ready");
-        }
-        if (document.fonts && document.fonts.ready) {
-          document.fonts.ready.then(reveal);
-        }
-        setTimeout(reveal, 300);
-
-        // --- Theme ---
-        function getTheme() {
-          if (typeof localStorage !== "undefined" && localStorage.getItem("theme")) {
-            return localStorage.getItem("theme");
-          }
-          return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        }
-
-        function setTheme(theme) {
-          document.documentElement.classList.toggle("dark", theme === "dark");
-          localStorage.setItem("theme", theme);
-        }
-
-        setTheme(getTheme());
-
-        // Bind all theme toggles (navbar + floating)
-        document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
-          var fresh = btn.cloneNode(true);
-          btn.parentNode.replaceChild(fresh, btn);
-          fresh.addEventListener("click", function () {
-            var newTheme = getTheme() === "dark" ? "light" : "dark";
-            fresh.classList.add("icon-exiting");
-            setTimeout(function () {
-              setTheme(newTheme);
-              fresh.classList.remove("icon-exiting");
-              fresh.classList.add("icon-entering");
-              fresh.addEventListener("animationend", function () {
-                fresh.classList.remove("icon-entering");
-              }, { once: true });
-            }, 150);
-          });
-        });
-
-        // --- Scroll: floating controls + navbar toggle visibility ---
-        var floatingControls = document.getElementById("floating-controls");
-        var scrollToTopBtn = document.getElementById("scroll-to-top");
-        var navTheme = document.getElementById("navbar-theme-toggle");
-        var navThemeMobile = document.getElementById("navbar-theme-toggle-mobile");
-
-        function onScroll() {
-          var scrolled = window.scrollY > 300;
-
-          if (floatingControls) floatingControls.style.display = scrolled ? "flex" : "none";
-          if (navTheme) navTheme.style.display = scrolled ? "none" : "inline-flex";
-          if (navThemeMobile) navThemeMobile.style.display = scrolled ? "none" : "inline-flex";
-        }
-
-        // Remove old scroll listener, add fresh one
-        window.removeEventListener("scroll", window.__onScrollHandler);
-        window.__onScrollHandler = onScroll;
-        window.addEventListener("scroll", onScroll, { passive: true });
-        onScroll();
-
-        // Scroll to top
-        if (scrollToTopBtn) {
-          var freshBtn = scrollToTopBtn.cloneNode(true);
-          scrollToTopBtn.parentNode.replaceChild(freshBtn, scrollToTopBtn);
-          freshBtn.addEventListener("click", function () {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          });
-        }
-      }
-
-      initAll();
-
-      // --- NProgress bar for view transitions ---
-      var bar = document.getElementById("nprogress-bar");
-
-      document.addEventListener("astro:before-preparation", function () {
-        if (bar) {
-          bar.classList.remove("done");
-          bar.classList.add("running");
-        }
-      });
-
-      document.addEventListener("astro:after-swap", function () {
-        if (bar) {
-          bar.classList.remove("running");
-          bar.classList.add("done");
-          setTimeout(function () { bar.classList.remove("done"); }, 300);
-        }
-        var t = localStorage.getItem("theme") ||
-          (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        document.documentElement.classList.toggle("dark", t === "dark");
-        initAll();
-      });
-    </script>
   </body>
 </html>
+
+<script>
+  // Everything interactive on the site lives here. Each page is wired up on
+  // astro:page-load, and window listeners are torn down on astro:before-swap.
+
+  const root = document.documentElement;
+  const HEADER = 56;
+  const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let cleanups: (() => void)[] = [];
+  document.addEventListener("astro:before-swap", () => {
+    cleanups.forEach((fn) => fn());
+    cleanups = [];
+  });
+
+  /** Run fn on scroll, at most once per frame, and once immediately. */
+  function onScroll(fn: () => void) {
+    let queued = false;
+    const handler = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        fn();
+        queued = false;
+      });
+    };
+    addEventListener("scroll", handler, { passive: true });
+    cleanups.push(() => removeEventListener("scroll", handler));
+    fn();
+  }
+
+  // ── Theme ────────────────────────────────────────────────────────────
+  const systemDark = matchMedia("(prefers-color-scheme: dark)");
+  const preferredTheme = () => localStorage.getItem("theme") ?? (systemDark.matches ? "dark" : "light");
+  const applyTheme = (theme: string) => root.classList.toggle("dark", theme === "dark");
+
+  // The router replaces <html> attributes with the incoming page's, which drops the class.
+  document.addEventListener("astro:after-swap", () => applyTheme(preferredTheme()));
+  systemDark.addEventListener("change", () => {
+    if (!localStorage.getItem("theme")) applyTheme(preferredTheme());
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target as Element).closest("[data-theme-toggle]")) return;
+    const next = root.classList.contains("dark") ? "light" : "dark";
+    const commit = () => {
+      applyTheme(next);
+      localStorage.setItem("theme", next);
+    };
+    if (!document.startViewTransition || reducedMotion()) return commit();
+    root.dataset.vt = "theme";
+    document.startViewTransition(commit).finished.finally(() => delete root.dataset.vt);
+  });
+
+  // ── Header: border on scroll, title swap and progress on post pages ──
+  function initHeader() {
+    const header = document.querySelector<HTMLElement>("[data-header]");
+    if (!header) return;
+    const article = document.querySelector<HTMLElement>("[data-article]");
+    const heading = document.querySelector<HTMLElement>("[data-article-title]");
+    const progress = header.querySelector<HTMLElement>("[data-progress]");
+
+    onScroll(() => {
+      header.classList.toggle("is-scrolled", scrollY > 8);
+      if (heading) header.classList.toggle("is-reading", heading.getBoundingClientRect().bottom < HEADER);
+      if (article && progress) {
+        const rect = article.getBoundingClientRect();
+        const span = rect.height - innerHeight + HEADER;
+        const value = span > 0 ? (HEADER - rect.top) / span : 1;
+        progress.style.transform = `scaleX(${Math.min(Math.max(value, 0), 1)})`;
+      }
+    });
+  }
+
+  // ── Lists: one highlight that glides between rows ───────────────────
+  function initLists() {
+    document.querySelectorAll<HTMLElement>("[data-list]").forEach((list) => {
+      const glide = document.createElement("span");
+      glide.className = "list-glide";
+      glide.setAttribute("aria-hidden", "true");
+      list.prepend(glide);
+      let shown = false;
+
+      const show = (row: HTMLElement) => {
+        glide.classList.toggle("is-instant", !shown);
+        glide.style.transform = `translateY(${row.offsetTop}px)`;
+        glide.style.height = `${row.offsetHeight}px`;
+        glide.style.opacity = "1";
+        shown = true;
+      };
+      const hide = () => {
+        glide.style.opacity = "0";
+        shown = false;
+      };
+      const rowOf = (target: EventTarget | null) => (target as Element | null)?.closest<HTMLElement>("[data-row]");
+
+      list.addEventListener("pointerover", (e) => {
+        const row = rowOf(e.target);
+        if (row) show(row);
+      });
+      list.addEventListener("pointerleave", hide);
+      list.addEventListener("focusin", (e) => {
+        const row = rowOf(e.target);
+        if (row) show(row);
+      });
+      list.addEventListener("focusout", (e) => {
+        if (!list.contains(e.relatedTarget as Node | null)) hide();
+      });
+    });
+  }
+
+  // ── Table of contents ───────────────────────────────────────────────
+  function initToc() {
+    const toc = document.querySelector<HTMLElement>("[data-toc]");
+    if (!toc) return;
+    const links = [...toc.querySelectorAll<HTMLAnchorElement>("a[href^='#']")];
+    const marker = toc.querySelector<HTMLElement>("[data-toc-marker]");
+    const targets = links
+      .map((link) => ({ link, el: document.getElementById(decodeURIComponent(link.hash.slice(1))) }))
+      .filter((t): t is { link: HTMLAnchorElement; el: HTMLElement } => t.el !== null);
+    if (!targets.length) return;
+
+    onScroll(() => {
+      // Active = the last heading that has crossed the upper third of the viewport.
+      let active = targets[0];
+      for (const t of targets) {
+        if (t.el.getBoundingClientRect().top > innerHeight * 0.33) break;
+        active = t;
+      }
+      for (const t of targets) t.link.classList.toggle("is-active", t === active);
+      if (marker) {
+        marker.style.transform = `translateY(${active.link.offsetTop}px)`;
+        marker.style.height = `${active.link.offsetHeight}px`;
+      }
+    });
+  }
+
+  document.addEventListener("click", (event) => {
+    const link = (event.target as Element).closest<HTMLAnchorElement>("[data-toc] a[href^='#']");
+    if (!link) return;
+    const target = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+    if (!target) return;
+    event.preventDefault();
+    target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth" });
+    history.replaceState(null, "", link.hash);
+  });
+
+  // ── Code blocks and tables ──────────────────────────────────────────
+  const COPY =
+    '<svg class="copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+  const CHECK =
+    '<svg class="ok" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>';
+
+  function initProse() {
+    document.querySelectorAll<HTMLPreElement>(".prose pre.astro-code").forEach((pre) => {
+      if (pre.parentElement?.classList.contains("code")) return;
+      const lang = pre.dataset.language === "plaintext" ? "text" : (pre.dataset.language ?? "");
+      const figure = document.createElement("figure");
+      figure.className = "code";
+      figure.innerHTML = `<div class="code-bar"><span>${lang}</span><button type="button" class="code-copy" data-copy aria-label="Copy code">${COPY}${CHECK}</button></div>`;
+      pre.replaceWith(figure);
+      figure.append(pre);
+    });
+    document.querySelectorAll<HTMLTableElement>(".prose table").forEach((table) => {
+      if (table.parentElement?.classList.contains("table-wrap")) return;
+      const wrap = document.createElement("div");
+      wrap.className = "table-wrap";
+      table.replaceWith(wrap);
+      wrap.append(table);
+    });
+  }
+
+  document.addEventListener("click", async (event) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>("[data-copy]");
+    const code = button?.closest(".code")?.querySelector("pre");
+    if (!button || !code) return;
+    try {
+      await navigator.clipboard.writeText(code.innerText);
+    } catch {
+      return; // Clipboard refused (insecure context or no focus). Nothing to confirm.
+    }
+    button.classList.add("is-copied");
+    setTimeout(() => button.classList.remove("is-copied"), 1600);
+  });
+
+  document.addEventListener("astro:page-load", () => {
+    initHeader();
+    initLists();
+    initToc();
+    initProse();
+  });
+</script>

@@ -1,12 +1,17 @@
 ---
 export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { SOCIAL_LINKS, SITE } from "@/config/site";
+import PostList from "@/components/PostList.astro";
+import Icon from "@/components/Icon.astro";
+import { SITE, SOCIAL_LINKS } from "@/config/site";
+import { getPosts } from "@/lib/posts";
+
+const posts = (await getPosts()).slice(0, 4);
 
 const personSchema = {
   "@context": "https://schema.org",
   "@type": "Person",
-  name: "Uchkun Rakhimov",
+  name: SITE.name,
   alternateName: ["uchkunio", "uchkunr", "Uchkun I/O"],
   url: SITE.url,
   jobTitle: "Backend Engineer",
@@ -28,57 +33,70 @@ const websiteSchema = {
   alternateName: "uchkun.io",
   url: SITE.url,
   description: SITE.description,
-  author: { "@type": "Person", name: "Uchkun Rakhimov" },
+  author: { "@type": "Person", name: SITE.name },
 };
 ---
 
 <BaseLayout>
-  <Fragment slot="default">
-    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
-    <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
 
-    <div class="mx-auto max-w-3xl px-4 sm:px-6">
-      <section class="pt-6 pb-10 sm:pt-10 sm:pb-16 animate-fade-in">
-        <div class="relative h-16 w-16 sm:h-20 sm:w-20 mb-4 sm:mb-5 rounded-full overflow-hidden ring-1 ring-foreground/10 bg-gradient-to-br from-primary/30 via-primary/10 to-muted">
-          <span
-            class="absolute inset-0 flex items-center justify-center text-lg sm:text-xl font-semibold text-foreground/70 select-none"
-            aria-hidden="true"
-          >
-            UR
-          </span>
-          <img
-            src="https://avatars.githubusercontent.com/u/105480357?v=4"
-            alt={SITE.name}
-            class="absolute inset-0 h-full w-full object-cover"
-            onerror="this.style.display='none'"
-            loading="eager"
-            decoding="async"
-          />
-        </div>
+  <div class="mx-auto max-w-[40rem] px-6 pt-12 pb-20 sm:pt-20">
+    <header data-reveal style="--i: 0">
+      <img
+        src="https://avatars.githubusercontent.com/u/105480357?v=4&s=160"
+        alt=""
+        width="80"
+        height="80"
+        class="h-20 w-20 rounded-full ring-1 ring-line"
+        loading="eager"
+        decoding="async"
+        onerror="this.style.display='none'"
+      />
+      <h1 class="mt-6 text-[1.6rem] font-semibold tracking-[-0.02em]">{SITE.name}</h1>
+      <p class="mt-1 text-fg-2">Backend engineer in Tashkent</p>
+    </header>
 
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight mb-3 sm:mb-4">
-          {SITE.name}
-        </h1>
-
-        <div class="prose prose-neutral dark:prose-invert max-w-2xl text-base sm:text-lg text-muted-foreground leading-7 sm:leading-8 space-y-4 sm:space-y-5">
-          <p>
-            I'm a backend engineer from Tashkent, Uzbekistan. I build scalable distributed systems, secure API architectures, and robust database models.
-          </p>
-
-          <p>
-            With 4+ years of experience across <a href="https://carlink.pro" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Carlink</a>, <a href="https://startupsdna.com" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Startups DNA</a>, <a href="https://numeo.ai" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">Numeo</a>, and <a href="https://etc.uz" target="_blank" rel="noopener noreferrer" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">East Telecom</a>, I specialize in TypeScript, Node.js (NestJS, Fastify), PostgreSQL, MongoDB, and cloud infrastructure.
-          </p>
-        </div>
-
-
-
-        <div class="mt-8 sm:mt-10 text-base sm:text-lg text-muted-foreground leading-7 sm:leading-8 max-w-2xl">
-          <p>
-            I write on <a href="/blog" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">the blog</a>.
-            Email is <a href="mailto:uchkunrakhimov@gmail.com" class="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground transition-colors">uchkunrakhimov@gmail.com</a>.
-          </p>
-        </div>
-      </section>
+    <div class="mt-8 space-y-5 text-[1.05rem] leading-[1.7] text-fg-2" data-reveal style="--i: 1">
+      <p>
+        I build scalable distributed systems, secure API architectures, and robust database models.
+      </p>
+      <p>
+        4+ years across <a href="https://carlink.pro" class="link" target="_blank" rel="noopener noreferrer">Carlink</a>, <a href="https://startupsdna.com" class="link" target="_blank" rel="noopener noreferrer">Startups DNA</a>, <a href="https://numeo.ai" class="link" target="_blank" rel="noopener noreferrer">Numeo</a>, and <a href="https://etc.uz" class="link" target="_blank" rel="noopener noreferrer">East Telecom</a>. Mostly TypeScript and Node.js (NestJS, Fastify), PostgreSQL, MongoDB, and cloud infrastructure.
+      </p>
     </div>
-  </Fragment>
+
+    <section class="mt-16" data-reveal style="--i: 2">
+      <div class="flex items-baseline justify-between">
+        <h2 class="eyebrow">Writing</h2>
+        <a href="/blog" class="quiet text-sm">All posts</a>
+      </div>
+      <PostList posts={posts} class="mt-3" />
+    </section>
+
+    <section class="mt-14" data-reveal style="--i: 3">
+      <h2 class="eyebrow">Elsewhere</h2>
+      <ul class="list mt-3" data-list>
+        {
+          SOCIAL_LINKS.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="row"
+                data-row
+                target={link.href.startsWith("mailto:") ? undefined : "_blank"}
+                rel={link.href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
+              >
+                <span class="row-title">{link.label}</span>
+                <span class="row-meta flex items-center gap-2 font-sans text-sm">
+                  {link.handle}
+                  <Icon name="arrow-up-right" size={14} class="row-arrow" />
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
 </BaseLayout>

@@ -1,7 +1,6 @@
 # uchkun.io
 
 ![Astro](https://img.shields.io/badge/Astro-7-FF5D01?logo=astro&logoColor=white)
-![React](https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white)
@@ -14,9 +13,9 @@ Source for [uchkun.io](https://uchkun.io), the personal site and engineering blo
 The site is built with Astro and ships as static HTML. Every route is prerendered at build time, so there is no database, no runtime API, and no required environment variables. Blog posts are Markdown files in the repository, validated against a typed schema during the build.
 
 - **Content:** Markdown posts in an Astro content collection with a Zod schema.
-- **Rendering:** All pages prerendered. React is used only for small interactive islands.
-- **Styling:** Tailwind CSS v4 with shadcn/ui primitives and a class-based dark mode.
-- **Navigation:** Astro View Transitions with a progress bar between pages.
+- **Rendering:** All pages prerendered. No client framework; the few interactive parts are plain TypeScript.
+- **Styling:** Tailwind CSS v4 over a small set of design tokens, with light and dark themes.
+- **Navigation:** Astro View Transitions, with the post title moving into the header as you read.
 - **Search:** Client-side filtering over the post list, with no index service.
 - **SEO:** Per-page meta and Open Graph tags, JSON-LD structured data, sitemap, and RSS.
 - **Social cards:** Open Graph images generated per post at build time with Satori and sharp.
@@ -72,12 +71,12 @@ Each post automatically gets its own page, tag pages, an RSS entry, a sitemap en
 
 ```text
 src/
-├── config/site.ts         Site metadata, bio, and social links
+├── config/site.ts         Site metadata and links
 ├── content.config.ts      Blog collection schema
 ├── content/blog/          Markdown posts
-├── layouts/BaseLayout.astro
-├── components/            Layout pieces, SEO head, icons, shadcn/ui primitives
-├── lib/                   Small utilities (reading time, cn)
+├── layouts/BaseLayout.astro   Document shell and all client-side behavior
+├── components/            Header, footer, post list, icons, SEO head
+├── lib/                   Post loading, reading time, date formatting
 ├── pages/
 │   ├── index.astro        Home
 │   ├── blog/              Post list, post pages, tag pages

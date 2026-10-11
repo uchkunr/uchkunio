@@ -1,132 +1,93 @@
 ---
 export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { Card, CardContent } from "@/components/ui/card";
-import { SearchIcon, CalendarIcon, TimerIcon } from "@/components/icons/NavIcons";
-import { getCollection } from "astro:content";
-import { format } from "date-fns";
-import { getReadingTime } from "@/lib/reading-time";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import PostList from "@/components/PostList.astro";
+import Icon from "@/components/Icon.astro";
+import { getPosts, groupByYear } from "@/lib/posts";
 
-const allPosts = await getCollection("blog");
-const posts = allPosts.sort(
-  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
-);
-
+const posts = await getPosts();
+const years = groupByYear(posts);
 ---
 
-<BaseLayout title="Blog" description="Technical articles about backend engineering, Node.js, TypeScript, and web development.">
-  <Breadcrumbs items={[{ name: "Blog", href: "/blog" }]} />
-  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
-    <a
-      href="/"
-      class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
-    >
-      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
-      Back to home
-    </a>
-    <div class="mb-6 sm:mb-10 animate-fade-in">
-      <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight">Blog</h1>
-      <p class="mt-1.5 sm:mt-2 text-base text-muted-foreground">
-        Thoughts on backend engineering, architecture, and web development.
-      </p>
-    </div>
+<BaseLayout title="Writing" description="Notes on backend engineering: Node.js, TypeScript, databases, and the systems around them.">
+  <Breadcrumbs items={[{ name: "Writing", href: "/blog" }]} />
 
-    <!-- Search -->
-    <div class="relative mb-4 sm:mb-6 animate-fade-in-delay-1">
-      <div class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-        <SearchIcon client:load />
-      </div>
+  <div class="mx-auto max-w-[40rem] px-6 pt-12 pb-20 sm:pt-20">
+    <header class="flex items-baseline justify-between" data-reveal style="--i: 0">
+      <h1 class="text-[1.6rem] font-semibold tracking-[-0.02em]">Writing</h1>
+      <p class="meta">{posts.length} {posts.length === 1 ? "post" : "posts"}</p>
+    </header>
+
+    <label class="search mt-8" data-reveal style="--i: 1">
+      <Icon name="search" size={15} />
       <input
-        id="blog-search"
-        type="text"
-        placeholder="Search posts..."
-        class="w-full rounded-md border border-input bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        id="search"
+        type="search"
+        placeholder="Search"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Search posts"
       />
-    </div>
+      <kbd class="kbd">/</kbd>
+    </label>
 
-
-    <!-- Posts -->
-    <div class="space-y-3 sm:space-y-4 animate-fade-in-delay-2" id="posts-list">
+    <div class="mt-4" data-reveal style="--i: 2">
       {
-        posts.map((post) => (
-          <a
-            href={`/blog/${post.id}`}
-            class="block group"
-            data-title={post.data.title.toLowerCase()}
-            data-tags={post.data.tags.join(" ").toLowerCase()}
-            data-excerpt={post.data.excerpt.toLowerCase()}
-          >
-            <Card className="transition-colors hover:bg-accent/50 py-0">
-              <CardContent className="p-3 sm:p-3.5">
-                <h2 class="text-base font-medium leading-snug group-hover:text-primary transition-colors">
-                  {post.data.title}
-                </h2>
-                <p class="mt-1 text-sm text-muted-foreground line-clamp-2">
-                  {post.data.excerpt}
-                </p>
-                <div class="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span class="inline-flex items-center gap-1">
-                    <CalendarIcon client:load />
-                    <time>{format(new Date(post.data.date), "MMM d, yyyy")}</time>
-                  </span>
-                  <span class="inline-flex items-center gap-1">
-                    <TimerIcon client:load />
-                    {getReadingTime(post.body ?? "")}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </a>
+        years.map(([year, group]) => (
+          <section class="pt-6" data-year>
+            <h2 class="meta">{year}</h2>
+            <PostList posts={group} dateStyle="day" class="mt-1" />
+          </section>
         ))
       }
+      <p class="py-12 text-center text-sm text-fg-3" data-empty hidden>Nothing matches.</p>
     </div>
-
-    <p id="no-results" class="hidden text-center text-muted-foreground py-12">
-      No posts found.
-    </p>
   </div>
 </BaseLayout>
 
-<script is:inline>
-  function initBlogSearch() {
-    var searchInput = document.getElementById("blog-search");
-    var postsList = document.getElementById("posts-list");
-    var noResults = document.getElementById("no-results");
+<script>
+  function initSearch() {
+    const input = document.querySelector<HTMLInputElement>("#search");
+    if (!input) return;
+    const posts = [...document.querySelectorAll<HTMLElement>("[data-post]")];
+    const years = [...document.querySelectorAll<HTMLElement>("[data-year]")];
+    const empty = document.querySelector<HTMLElement>("[data-empty]");
 
-    if (!searchInput || !postsList) return;
-
-    var params = new URLSearchParams(window.location.search);
-    var initialSearch = params.get("search") || "";
-    if (initialSearch) {
-      searchInput.value = initialSearch;
-      filterPosts(initialSearch);
-    }
-
-    searchInput.addEventListener("input", function (e) {
-      filterPosts(e.target.value);
-    });
-
-    function filterPosts(query) {
-      var q = query.toLowerCase().trim();
-      var posts = postsList.querySelectorAll("a[data-title]");
-      var visible = 0;
-
-      posts.forEach(function (post) {
-        var title = post.getAttribute("data-title") || "";
-        var tags = post.getAttribute("data-tags") || "";
-        var excerpt = post.getAttribute("data-excerpt") || "";
-        var match = !q || title.includes(q) || tags.includes(q) || excerpt.includes(q);
-        post.style.display = match ? "" : "none";
-        if (match) visible++;
-      });
-
-      if (noResults) {
-        noResults.classList.toggle("hidden", visible > 0);
+    const filter = () => {
+      const query = input.value.trim().toLowerCase();
+      let shown = 0;
+      for (const post of posts) {
+        const hit = !query || (post.dataset.search ?? "").includes(query);
+        post.hidden = !hit;
+        if (hit) shown++;
       }
+      for (const year of years) year.hidden = !year.querySelector("[data-post]:not([hidden])");
+      if (empty) empty.hidden = shown > 0;
+    };
+
+    input.addEventListener("input", filter);
+    const initial = new URLSearchParams(location.search).get("q");
+    if (initial) {
+      input.value = initial;
+      filter();
     }
   }
 
-  initBlogSearch();
-  document.addEventListener("astro:after-swap", initBlogSearch);
+  document.addEventListener("astro:page-load", initSearch);
+
+  document.addEventListener("keydown", (event) => {
+    const input = document.querySelector<HTMLInputElement>("#search");
+    if (!input) return;
+    const typing = event.target instanceof HTMLElement && event.target.matches("input, textarea, select");
+    if (event.key === "/" && !typing) {
+      event.preventDefault();
+      input.focus();
+      input.select();
+    } else if (event.key === "Escape" && event.target === input) {
+      input.value = "";
+      input.dispatchEvent(new Event("input"));
+      input.blur();
+    }
+  });
 </script>

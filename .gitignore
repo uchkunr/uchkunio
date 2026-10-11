@@ -26,8 +26,10 @@ pnpm-debug.log*
 # vercel
 .vercel/
 
-# package-lock (using bun)
+# other package managers' lockfiles (using pnpm)
 package-lock.json
+yarn.lock
+bun.lock
 
 # Claude Code internal worktrees
 .claude/worktrees/

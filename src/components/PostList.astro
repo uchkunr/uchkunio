@@ -1,0 +1,25 @@
+---
+import { formatDate, type DateStyle } from "@/lib/date";
+import type { Post } from "@/lib/posts";
+
+interface Props {
+  posts: Post[];
+  dateStyle?: DateStyle;
+  class?: string;
+}
+
+const { posts, dateStyle = "short", class: className } = Astro.props;
+---
+
+<ul class:list={["list", className]} data-list>
+  {
+    posts.map((post) => (
+      <li data-post data-search={[post.data.title, post.data.excerpt, ...post.data.tags].join(" ").toLowerCase()}>
+        <a href={`/blog/${post.id}`} class="row" data-row>
+          <span class="row-title text-balance">{post.data.title}</span>
+          <time class="row-meta" datetime={post.data.date}>{formatDate(post.data.date, dateStyle)}</time>
+        </a>
+      </li>
+    ))
+  }
+</ul>

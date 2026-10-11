@@ -9,7 +9,8 @@ Guidance for working in this repository. Read it before making changes.
 | Layer | Choice |
 | --- | --- |
 | Framework | Astro 7 (`output: "server"`, every route prerendered) |
-| UI | React 19 islands, Tailwind CSS v4, shadcn/ui (`base-nova` style on Base UI) |
+| UI | Tailwind CSS v4 plus hand-written CSS in `global.css`. No client framework: all interactivity is vanilla TypeScript in Astro `<script>` tags |
+| Fonts | Outfit via Astro's `fonts` config (Google provider, self-hosted at build). Code uses the system monospace stack |
 | Language | TypeScript, `astro/tsconfigs/strict` |
 | Package manager | **pnpm** (not npm, yarn, or bun) |
 | Hosting | Vercel via `@astrojs/vercel` |
@@ -41,45 +42,48 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 
 | Route | Source | Notes |
 | --- | --- | --- |
-| `/` | `src/pages/index.astro` | Bio and contact, Person and WebSite JSON-LD |
-| `/blog` | `src/pages/blog/index.astro` | Post list with client-side search (`?search=` supported) |
-| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page: hero, TOC, reading progress, code copy buttons, prev/next |
+| `/` | `src/pages/index.astro` | Bio, latest posts, links. Person and WebSite JSON-LD |
+| `/blog` | `src/pages/blog/index.astro` | Posts grouped by year, client-side search (`/` focuses it, `?q=` prefills it) |
+| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page: title moves into the header on scroll, progress line, TOC at `xl` and up, code copy, prev/next |
 | `/blog/tags/[tag]` | `src/pages/blog/tags/[tag].astro` | Posts filtered by tag |
 | `/og/[slug].png` | `src/pages/og/[slug].png.ts` | 1200x630 OG image per post |
 | `/rss.xml` | `src/pages/rss.xml.ts` | RSS feed |
 | `/404` | `src/pages/404.astro` | Not found page |
 | `/sitemap-index.xml` | `@astrojs/sitemap` | Generated at build, not available in dev |
 
-**Client runtime.** `BaseLayout.astro` mounts `<ClientRouter />` (View Transitions). This changes how scripts behave:
+**Client runtime.** `BaseLayout.astro` mounts `<ClientRouter />` (View Transitions), and one bundled `<script>` in the same file owns every behavior on the site. Rules that follow from that:
 
-- `is:inline` scripts run on the initial load only. Anything that binds DOM listeners must also re-run on `astro:after-swap`. Follow the existing pattern in `BaseLayout.astro` and `blog/index.astro`: wrap setup in an `init` function, call it once, and register it on `astro:after-swap`.
-- Re-running setup must be idempotent. The layout replaces nodes with clones before binding and swaps out the global scroll handler to avoid stacking listeners. Do the same for new behavior.
-- Theme is a `dark` class on `<html>`, persisted in `localStorage.theme`, applied in `<head>` before paint to avoid a flash.
+- Bundled scripts run once per visit, not once per page. Per-page setup is registered on `astro:page-load` (which also fires on the first load). Delegated `document` listeners are registered once at module level.
+- Window listeners leak across navigations. Add them through `onScroll()` or push a teardown into `cleanups`; both are drained on `astro:before-swap`.
+- The router copies `<html>` attributes from the incoming page, which drops the `dark` class. The layout re-applies it on `astro:after-swap`. Do not duplicate that logic elsewhere.
+- `is:inline` scripts are for code that must run before first paint (the theme class). They execute once unless marked `data-astro-rerun`.
+- Theme is a `dark` class on `<html>`, persisted in `localStorage.theme`. Switching it runs inside `document.startViewTransition` for a crossfade.
 
 ## Where things live
 
 | Task | File |
 | --- | --- |
 | Site name, description, URL, OG default, Twitter handle | `src/config/site.ts` (`SITE`) |
-| Footer social links, JSON-LD `sameAs` | `src/config/site.ts` (`SOCIAL_LINKS`) |
+| Links on the home page and JSON-LD `sameAs` | `src/config/site.ts` (`SOCIAL_LINKS`) |
 | Home page copy | `src/pages/index.astro` (bio paragraphs are inline) |
 | Blog post | `src/content/blog/<slug>.md` |
 | Frontmatter schema | `src/content.config.ts` |
-| Global layout, theme, View Transitions, scroll behavior | `src/layouts/BaseLayout.astro` |
-| Header and footer | `src/components/Navbar.astro`, `src/components/Footer.astro` |
+| Fonts | `astro.config.mjs` (`fonts`), loaded with `<Font>` in `BaseLayout.astro` |
+| Layout and every client-side behavior | `src/layouts/BaseLayout.astro` |
+| Header: nav, theme toggle, reading title, progress line | `src/components/Header.astro` |
+| Footer: RSS and source link | `src/components/Footer.astro` |
+| Post rows shared by home, blog, and tag pages | `src/components/PostList.astro` |
+| Inline SVG icons | `src/components/Icon.astro` |
 | Meta, Open Graph, Twitter tags | `src/components/SEOHead.astro` |
 | Breadcrumb JSON-LD | `src/components/Breadcrumbs.astro` |
 | Vercel Web Analytics loader | `src/components/Analytics.astro` (production only) |
-| Icons | `src/components/icons/NavIcons.tsx`, `SocialIcons.tsx` (Tabler set from `react-icons/tb`) |
-| shadcn/ui primitives | `src/components/ui/` |
-| Design tokens, prose and code block styles | `src/styles/global.css` |
+| Design tokens, motion, component and prose styles | `src/styles/global.css` |
+| Post loading, sorting, reading time, year grouping | `src/lib/posts.ts` |
+| Date formatting | `src/lib/date.ts` |
 | OG image template | `src/pages/og/[slug].png.ts` |
-| Utilities | `src/lib/utils.ts` (`cn`), `src/lib/reading-time.ts` |
 | Static assets, favicons, search engine verification files | `public/` |
 
-Nav links are written directly in `Navbar.astro`, and the floating theme and scroll-to-top buttons in `FloatingControls.astro`. Their behavior is bound in `BaseLayout.astro`.
-
-Keep `site.ts`, the icon modules, and `src/components/` free of dead exports. Delete code when its last caller goes away instead of keeping it for later. The exception is `src/components/ui/`: keep each shadcn file whole as generated, and delete the file only when no part of it is used.
+Nav links are written directly in `Header.astro`. Keep `site.ts`, `Icon.astro`, and `src/components/` free of dead exports: delete code when its last caller goes away instead of keeping it for later.
 
 ## Content
 
@@ -114,18 +118,19 @@ Writing style for posts and docs:
 ## Code conventions
 
 - Path alias `@/*` maps to `src/*`. Use it instead of relative paths across directories.
-- `.astro` for static markup and layout. `.tsx` only when a component needs client-side interactivity.
-- Tailwind only. No CSS modules, no inline `<style>` blocks for component styling. Shared prose and code styles live in `global.css`.
-- Merge conditional classes with `cn()` from `@/lib/utils`.
-- Add shadcn components with `pnpm shadcn add <component>`. They land in `src/components/ui/` and use Base UI, not Radix.
-- Match the surrounding code. `is:inline` scripts are not bundled or transpiled, and the existing ones use ES5-style `var` and `function`. Keep new inline scripts in the same style.
+- Everything is `.astro`. There is no React. Do not add a UI framework for something a few lines of script can do.
+- Tailwind utilities handle layout and spacing inside templates. Anything with a transition, a hover state, or more than one rule that repeats gets a class in `global.css` (`.row`, `.search`, `.toc`, `.code`). No CSS modules, no `<style>` blocks in components.
+- Color comes only from the tokens in `global.css`: `--bg`, `--fg`, `--fg-2`, `--fg-3`, `--line`, `--fill`, `--ok`. No new colors, no gradients, no shadows. The palette is the design.
+- Motion has one easing (`--swift`), 200 to 300ms for feedback, 600 to 700ms for entrances. Entrance order is `data-reveal` with `--i`. Every animation must communicate state (hover target, progress, position); decorative motion is not added. The `prefers-reduced-motion` block at the end of `global.css` zeroes all durations, so new animations are covered automatically.
+- Hover highlight on a list: wrap it in `[data-list]` and mark each link `[data-row]`. The layout script does the rest.
+- `is:inline` scripts are not bundled or transpiled. Keep them short and ES5-style, as the existing ones are.
 - Commits follow Conventional Commits as used in history: `feat:`, `fix:`, `refactor:`, `docs:`, `content:`, `chore(deps):`.
 
 ## Dependencies
 
 - Use pnpm for every install and removal. Never create `package-lock.json`, `yarn.lock`, or `bun.lock`.
-- `dependencies` holds anything imported by site code or used by Astro at runtime, including Astro integrations, the Vercel adapter, and the OG image stack (`satori`, `satori-html`, `sharp`).
-- `devDependencies` holds build-only tooling and types: Tailwind and its Vite plugin, `tw-animate-css`, the `shadcn` CLI, and `@types/*`.
+- `dependencies` holds anything imported by site code or used by Astro at runtime: Astro, its integrations, the Vercel adapter, and the OG image stack (`satori`, `satori-html`, `sharp`).
+- `devDependencies` holds build-only tooling: Tailwind and its Vite plugin. The site ships no client-side dependencies.
 - Do not add `@types/*` packages for libraries that ship their own types.
 - Do not downgrade packages to fix a problem. Find the root cause and fix it in config or code.
 - `pnpm-workspace.yaml` holds pnpm supply-chain settings: `allowBuilds` (packages allowed to run install scripts) and `minimumReleaseAgeExclude` (pinned exceptions to the minimum release age). A new package with an install script or a very recent release may need an entry there.
@@ -133,9 +138,9 @@ Writing style for posts and docs:
 ## Known gotchas
 
 - **Vite dep optimization and View Transitions.** `astro.config.mjs` pre-bundles the `astro/virtual-modules/transitions-*` modules via `vite.optimizeDeps.include`. Without it, Vite discovers them on first load, re-optimizes, and the dev toolbar gets stuck on a 504 "Outdated Optimize Dep" with Astro 7.3 and Vite 8.3. Keep this until a newer Astro or Vite release fixes it, and verify by loading a page and checking that no request returns 504.
-- **OG images need network at build time.** The font is fetched from Google Fonts. If that fails, the endpoint falls back to a system font, and the build fails only if none is found.
+- **The build needs network access.** Astro's Google font provider downloads Outfit at build time, and the OG template fetches it separately for Satori (which needs TTF). The OG endpoint falls back to a system font; the font provider does not.
 - **Analytics** loads `/_vercel/insights/script.js` in production builds only. It requires Web Analytics to be enabled on the Vercel project.
-- **Icons are hydrated.** `NavIcons` and `SocialIcons` are used with `client:load` even though they are static SVG. New static icons do not need a client directive.
+- **The TOC is positioned outside the column.** It sits in the right margin at `xl` and up (`position: absolute; left: 100%`), so it needs the article to be `relative` and the viewport to have room. It is hidden below `xl`.
 
 ## Before you finish a change
 

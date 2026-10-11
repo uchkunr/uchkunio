@@ -1,32 +1,25 @@
 ---
 export const prerender = true;
+import { render } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { BackIcon, CalendarIcon, TimerIcon } from "@/components/icons/NavIcons";
-import { SITE } from "@/config/site";
-import { getCollection, render } from "astro:content";
-import { format } from "date-fns";
-import { getReadingTime } from "@/lib/reading-time";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import Icon from "@/components/Icon.astro";
+import { SITE } from "@/config/site";
+import { formatDate } from "@/lib/date";
+import { getPosts, readingTime } from "@/lib/posts";
 
 export async function getStaticPaths() {
-  const posts = await getCollection("blog");
-  const sorted = posts.sort(
-    (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
-  );
-  return sorted.map((post, i) => ({
+  const posts = await getPosts();
+  return posts.map((post, i) => ({
     params: { slug: post.id },
-    props: {
-      post,
-      newerPost: sorted[i - 1] ?? null,
-      olderPost: sorted[i + 1] ?? null,
-    },
+    props: { post, newer: posts[i - 1] ?? null, older: posts[i + 1] ?? null },
   }));
 }
 
-const { post, newerPost, olderPost } = Astro.props;
+const { post, newer, older } = Astro.props;
 const { Content, headings } = await render(post);
-const readingTime = getReadingTime(post.body ?? "");
-const tocHeadings = headings.filter((h) => h.depth <= 3);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const url = `/blog/${post.id}`;
 
 const articleSchema = {
   "@context": "https://schema.org",
@@ -34,19 +27,9 @@ const articleSchema = {
   headline: post.data.title,
   description: post.data.excerpt,
   datePublished: post.data.date,
-  author: {
-    "@type": "Person",
-    name: "Uchkun Rakhimov",
-    url: SITE.url,
-  },
-  publisher: {
-    "@type": "Person",
-    name: "Uchkun Rakhimov",
-  },
-  mainEntityOfPage: {
-    "@type": "WebPage",
-    "@id": new URL(`/blog/${post.id}`, SITE.url).href,
-  },
+  author: { "@type": "Person", name: SITE.name, url: SITE.url },
+  publisher: { "@type": "Person", name: SITE.name },
+  mainEntityOfPage: { "@type": "WebPage", "@id": new URL(url, SITE.url).href },
   keywords: post.data.tags.join(", "),
 };
 ---
@@ -58,224 +41,96 @@ const articleSchema = {
   type="article"
   publishedDate={post.data.date}
   tags={post.data.tags}
+  headerTitle={post.data.title}
 >
   <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
-  <Breadcrumbs items={[{ name: "Blog", href: "/blog" }, { name: post.data.title, href: `/blog/${post.id}` }]} />
+  <Breadcrumbs items={[{ name: "Writing", href: "/blog" }, { name: post.data.title, href: url }]} />
 
-  <!-- Reading Progress Bar -->
-  <div
-    id="reading-progress"
-    class="fixed top-14 left-0 h-0.5 bg-primary z-50 transition-[width] duration-100"
-    style="width: 0%"
-  >
-  </div>
-
-  <!-- Full-bleed Hero -->
-  <section class="relative w-full overflow-hidden isolate -mt-14 pt-14 min-h-[70vh] sm:min-h-[80vh] flex items-end animate-fade-in">
-    <!-- Background image / fallback -->
-    {post.data.cover ? (
-      <img
-        src={post.data.cover}
-        alt=""
-        aria-hidden="true"
-        class="absolute inset-0 -z-20 h-full w-full object-cover object-center scale-105"
-      />
-    ) : (
-      <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_20%_20%,hsl(var(--primary)/0.35),transparent_55%),radial-gradient(circle_at_80%_60%,hsl(var(--primary)/0.25),transparent_50%),linear-gradient(135deg,hsl(var(--muted)),hsl(var(--background)))]">
-      </div>
-    )}
-    <!-- Grid pattern overlay -->
-    <div
-      class="absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay"
-      style="background-image: linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px); background-size: 48px 48px;"
-      aria-hidden="true"
-    >
-    </div>
-    <!-- Gradient overlays for readability + fade to page background -->
-    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/80 to-background/30" aria-hidden="true"></div>
-    <div class="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-background to-transparent" aria-hidden="true"></div>
-
-    <!-- Title container -->
-    <div class="relative mx-auto w-full max-w-3xl px-4 sm:px-6 pt-24 sm:pt-32 pb-10 sm:pb-14">
-      <a
-        href="/blog"
-        class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
-      >
-        <BackIcon client:load />
-        Back to blog
+  <div class="mx-auto max-w-[40rem] px-6 pt-10 pb-20 sm:pt-16">
+    <article class="relative" data-article>
+      <a href="/blog" class="quiet inline-flex items-center gap-1.5 text-sm" data-reveal style="--i: 0">
+        <Icon name="arrow-left" size={14} />
+        Writing
       </a>
-      <header>
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
-          <span class="inline-flex items-center gap-1.5">
-            <CalendarIcon client:load />
-            <time>{format(new Date(post.data.date), "MMMM d, yyyy")}</time>
-          </span>
-          <span class="inline-flex items-center gap-1.5">
-            <TimerIcon client:load />
-            {readingTime}
-          </span>
-        </div>
-        <h1 class="mt-3 sm:mt-4 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight leading-[1.1] drop-shadow-sm">
-          {post.data.title}
-        </h1>
-        <p class="mt-3 sm:mt-4 text-lg text-muted-foreground max-w-2xl">
-          {post.data.excerpt}
-        </p>
-        <div class="mt-4 sm:mt-5 flex flex-wrap gap-1.5">
-          {post.data.tags.map((tag: string) => (
-            <a
-              href={`/blog/tags/${tag}`}
-              class="px-2.5 py-1 rounded-full text-xs font-medium bg-background/60 backdrop-blur-sm text-muted-foreground border border-border hover:border-foreground/30 hover:text-foreground transition-colors"
-            >
-              {tag}
-            </a>
-          ))}
-        </div>
-      </header>
-    </div>
-  </section>
 
-  <article class="mx-auto max-w-3xl px-4 sm:px-6 pb-8 sm:pb-16">
+      <h1
+        class="mt-8 text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.025em] text-balance sm:text-[2rem]"
+        data-article-title
+        data-reveal
+        style="--i: 1"
+      >
+        {post.data.title}
+      </h1>
 
-    <!-- Table of Contents -->
-    {
-      tocHeadings.length > 2 && (
-        <nav class="mb-6 sm:mb-8 rounded-lg border border-border bg-muted/30 p-3 sm:p-4 animate-fade-in">
-          <p class="text-xs sm:text-sm font-medium mb-2 sm:mb-3">Table of Contents</p>
-          <ul class="space-y-1 sm:space-y-1.5">
-            {tocHeadings.map((h) => (
-              <li style={`padding-left: ${(h.depth - 1) * 10}px`}>
-                <a
-                  href={`#${h.slug}`}
-                  class="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {h.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )
-    }
+      <p class="meta mt-4" data-reveal style="--i: 2">
+        <time datetime={post.data.date}>{formatDate(post.data.date, "long")}</time>
+        <span class="mx-1.5 text-fg-3">·</span>
+        {readingTime(post.body ?? "")}
+      </p>
 
-    <!-- Content -->
-    <div class="prose prose-mobile animate-fade-in-delay-1">
-      <Content />
-    </div>
+      {
+        post.data.cover && (
+          <img
+            src={post.data.cover}
+            alt=""
+            class="mt-8 w-full rounded-lg border border-line"
+            loading="eager"
+            decoding="async"
+            data-reveal
+            style="--i: 3"
+          />
+        )
+      }
 
-  </article>
-
-  <!-- Fixed side arrows (desktop) - Newer ← left, right → Older -->
-  {newerPost && (
-    <a
-      href={`/blog/${newerPost.id}`}
-      class="hidden lg:flex fixed left-4 xl:left-8 top-1/2 -translate-y-1/2 z-40 group"
-      aria-label={`Newer: ${newerPost.data.title}`}
-    >
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 flex items-center justify-center rounded-full border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm group-hover:border-border group-hover:bg-accent transition-all">
-          <svg class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
-        </div>
-        <div class="max-w-[140px] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <p class="text-[10px] text-muted-foreground mb-0.5">Newer</p>
-          <p class="text-xs font-medium line-clamp-2 leading-tight">{newerPost.data.title}</p>
-        </div>
+      <div class="prose mt-10" data-reveal="soft" style="--i: 3">
+        <Content />
       </div>
-    </a>
-  )}
 
-  {olderPost && (
-    <a
-      href={`/blog/${olderPost.id}`}
-      class="hidden lg:flex fixed right-4 xl:right-8 top-1/2 -translate-y-1/2 z-40 group"
-      aria-label={`Older: ${olderPost.data.title}`}
-    >
-      <div class="flex items-center gap-3">
-        <div class="max-w-[140px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-right">
-          <p class="text-[10px] text-muted-foreground mb-0.5">Older</p>
-          <p class="text-xs font-medium line-clamp-2 leading-tight">{olderPost.data.title}</p>
-        </div>
-        <div class="h-10 w-10 flex items-center justify-center rounded-full border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm group-hover:border-border group-hover:bg-accent transition-all">
-          <svg class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6" /></svg>
-        </div>
-      </div>
-    </a>
-  )}
+      <footer class="mt-12 flex flex-wrap items-center gap-2">
+        <span class="mr-1 text-sm text-fg-3">Tagged</span>
+        {post.data.tags.map((tag) => <a href={`/blog/tags/${tag}`} class="tag">{tag}</a>)}
+      </footer>
 
-  <!-- Mobile newer/older (bottom) -->
-  {
-    (newerPost || olderPost) && (
-      <nav class="lg:hidden mx-auto max-w-3xl px-4 sm:px-6 pb-8">
-        <div class="grid grid-cols-2 gap-3 pt-6 border-t border-border/50">
-          {newerPost ? (
-            <a href={`/blog/${newerPost.id}`} class="group flex flex-col gap-1 p-3 rounded-lg border border-border/50 hover:bg-accent/30 transition-all">
-              <span class="flex items-center gap-1 text-[11px] text-muted-foreground">
-                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg>
-                Newer
-              </span>
-              <span class="text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">{newerPost.data.title}</span>
-            </a>
-          ) : <div />}
-          {olderPost ? (
-            <a href={`/blog/${olderPost.id}`} class="group flex flex-col items-end gap-1 p-3 rounded-lg border border-border/50 hover:bg-accent/30 transition-all text-right">
-              <span class="flex items-center gap-1 text-[11px] text-muted-foreground">
-                Older
-                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6" /></svg>
-              </span>
-              <span class="text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">{olderPost.data.title}</span>
-            </a>
-          ) : <div />}
-        </div>
-      </nav>
-    )
-  }
+      {
+        (older || newer) && (
+          <nav class="pager" aria-label="More posts">
+            {older ? (
+              <a href={`/blog/${older.id}`}>
+                <span class="meta">Older</span>
+                <span class="pager-title text-balance">{older.data.title}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+            {newer ? (
+              <a href={`/blog/${newer.id}`} class="sm:items-end sm:text-right">
+                <span class="meta">Newer</span>
+                <span class="pager-title text-balance">{newer.data.title}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+          </nav>
+        )
+      }
+
+      {
+        toc.length > 2 && (
+          <aside class="toc hidden xl:block" data-toc>
+            <div class="toc-inner">
+              <p class="mb-3 text-[0.75rem] font-medium text-fg-3">On this page</p>
+              <nav class="toc-list" aria-label="Table of contents">
+                <span class="toc-marker" data-toc-marker aria-hidden="true" />
+                {toc.map((h) => (
+                  <a href={`#${h.slug}`} data-depth={h.depth}>
+                    {h.text}
+                  </a>
+                ))}
+              </nav>
+            </div>
+          </aside>
+        )
+      }
+    </article>
+  </div>
 </BaseLayout>
-
-<script is:inline>
-  // Reading progress
-  function updateProgress() {
-    const bar = document.getElementById("reading-progress");
-    if (!bar) return;
-    const scrollTop = window.scrollY;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-    bar.style.width = Math.min(progress, 100) + "%";
-  }
-  window.addEventListener("scroll", updateProgress, { passive: true });
-  updateProgress();
-
-  // Code block: header with language + copy button
-  var COPY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg>';
-  var CHECK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg>';
-
-  document.querySelectorAll(".prose pre").forEach(function(pre) {
-    if (pre.closest(".code-block")) return;
-
-    var code = pre.querySelector("code");
-
-    // Word-wrap
-    if (code) {
-      code.style.whiteSpace = "pre-wrap";
-      code.style.wordBreak = "break-word";
-    }
-
-    var wrapper = document.createElement("div");
-    wrapper.className = "code-block";
-
-    var btn = document.createElement("button");
-    btn.className = "code-copy-btn";
-    btn.setAttribute("aria-label", "Copy code");
-    btn.innerHTML = COPY_ICON;
-
-    btn.addEventListener("click", function() {
-      if (!code) return;
-      navigator.clipboard.writeText(code.textContent || "");
-      btn.innerHTML = CHECK_ICON;
-      setTimeout(function() { btn.innerHTML = COPY_ICON; }, 2000);
-    });
-
-    pre.parentNode.insertBefore(wrapper, pre);
-    wrapper.appendChild(pre);
-    wrapper.appendChild(btn);
-  });
-</script>
