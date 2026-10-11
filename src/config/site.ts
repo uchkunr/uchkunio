@@ -3,7 +3,7 @@ export const SITE = {
   title: "Uchkun Rakhimov",
   titleTemplate: "%s | uchkun.io",
   description:
-    "Backend Engineer specializing in scalable distributed systems. 3+ years building with Node.js, TypeScript, NestJS, PostgreSQL, and cloud infrastructure.",
+    "Backend Engineer specializing in scalable distributed systems. 4+ years building with Node.js, TypeScript, NestJS, PostgreSQL, and cloud infrastructure.",
   url: "https://uchkun.io",
   ogImage: "/og-image.jpg",
   twitterHandle: "@uchkunrakhimov",
