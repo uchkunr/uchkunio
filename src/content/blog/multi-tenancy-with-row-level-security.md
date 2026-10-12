@@ -1,6 +1,6 @@
 ---
 title: "NestJS va Postgres 18'da multi-tenancy: tenantlarni Row-Level Security bilan ajratish"
-date: "2026-10-12"
+date: "2026-09-15"
 excerpt: "Bitta unutilgan WHERE bir mijozning ma'lumotini boshqasiga ochib beradi. Tenant tekshiruvini koddan bazaga ko'chirish, connection pool'dagi yashirin tuzoq va NestJS'dagi to'liq yechim."
 tags:
   - postgresql
