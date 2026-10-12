@@ -44,9 +44,10 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | --- | --- | --- |
 | `/` | `src/pages/index.astro` | Bio, latest posts, links. Person and WebSite JSON-LD |
 | `/blog` | `src/pages/blog/index.astro` | Posts grouped by year, client-side search (`/` focuses it, `?q=` prefills it) |
-| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page: title moves into the header on scroll, progress line, TOC at `xl` and up, code copy, prev/next |
+| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page (Uzbek original): title moves into the header on scroll, progress line, TOC at `xl` and up, code copy, prev/next, language links |
+| `/en/blog/[slug]`, `/ru/blog/[slug]` | `src/pages/[lang]/blog/[slug].astro` | Translated post page, same `PostLayout`, prev/next within the language |
 | `/blog/tags/[tag]` | `src/pages/blog/tags/[tag].astro` | Posts filtered by tag |
-| `/og/[slug].png` | `src/pages/og/[slug].png.ts` | 1200x630 OG image per post |
+| `/og/[...slug].png` | `src/pages/og/[...slug].png.ts` | 1200x630 OG image per post and language (`/og/<slug>.png`, `/og/en/<slug>.png`) |
 | `/rss.xml` | `src/pages/rss.xml.ts` | RSS feed |
 | `/404` | `src/pages/404.astro` | Not found page |
 | `/sitemap-index.xml` | `@astrojs/sitemap` | Generated at build, not available in dev |
@@ -66,7 +67,9 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | Site name, description, URL, OG default, Twitter handle | `src/config/site.ts` (`SITE`) |
 | Links on the home page and JSON-LD `sameAs` | `src/config/site.ts` (`SOCIAL_LINKS`) |
 | Home page copy | `src/pages/index.astro` (bio paragraphs are inline) |
-| Blog post | `src/content/blog/<slug>.md` |
+| Blog post | `src/content/blog/<slug>.md` (Uzbek), `src/content/blog/{en,ru}/<slug>.md` (translations) |
+| Post page markup, language links, `hreflang` | `src/layouts/PostLayout.astro` |
+| Locales, slugs, post URLs, translations lookup | `src/lib/posts.ts` (`LOCALES`, `localeOf`, `slugOf`, `postUrl`, `getTranslations`) |
 | Frontmatter schema | `src/content.config.ts` |
 | Fonts | `astro.config.mjs` (`fonts`), loaded with `<Font>` in `BaseLayout.astro` |
 | Layout and every client-side behavior | `src/layouts/BaseLayout.astro` |
@@ -80,7 +83,7 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | Design tokens, motion, component and prose styles | `src/styles/global.css` |
 | Post loading, sorting, reading time, year grouping | `src/lib/posts.ts` |
 | Date formatting | `src/lib/date.ts` |
-| OG image template | `src/pages/og/[slug].png.ts` |
+| OG image template | `src/pages/og/[...slug].png.ts` |
 | Static assets, favicons, search engine verification files | `public/` |
 
 Nav links are written directly in `Header.astro`. Keep `site.ts`, `Icon.astro`, and `src/components/` free of dead exports: delete code when its last caller goes away instead of keeping it for later.
@@ -108,6 +111,9 @@ Rules:
 - Every fenced code block declares a language. Shiki highlights with `github-light` and `github-dark-dimmed`.
 - Reading time is computed at 230 words per minute from the raw body.
 - Changing a slug changes a public URL. Treat it as a breaking change.
+- **Translations.** Posts are written in Uzbek; a translation is the same filename under `en/` or `ru/` (`src/content/blog/en/<slug>.md` serves `/en/blog/<slug>`). Frontmatter is identical except `title` and `excerpt`; code blocks stay identical except human-language comments and output text; links to other posts point to the same language. `getPosts()` returns Uzbek posts only, so lists, tags and RSS never mix languages. The site chrome is English and is not translated.
+- `<html lang>` and `og:locale` follow the post's language; every post page emits `hreflang` alternates with `x-default` pointing at the Uzbek original.
+- Outfit has no Cyrillic. On pages the browser falls back to the system font for Russian text; OG images load Noto Sans as a fallback font for the same reason.
 
 Writing style for posts and docs:
 

@@ -9,6 +9,8 @@ interface Props {
   type?: "website" | "article";
   publishedDate?: string;
   tags?: string[];
+  ogLocale?: string;
+  alternates?: { hreflang: string; href: string }[];
 }
 
 const {
@@ -19,6 +21,8 @@ const {
   type = "website",
   publishedDate,
   tags,
+  ogLocale = SITE.locale,
+  alternates = [],
 } = Astro.props;
 
 const pageTitle = title ? SITE.titleTemplate.replace("%s", title) : SITE.title;
@@ -33,6 +37,7 @@ const ogImageUrl = new URL(ogImage, SITE.url).href;
 <title>{pageTitle}</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonical} />
+{alternates.map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={new URL(alt.href, SITE.url).href} />)}
 
 <!-- Favicons -->
 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -55,7 +60,7 @@ const ogImageUrl = new URL(ogImage, SITE.url).href;
 <meta property="og:image" content={ogImageUrl} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:locale" content={SITE.locale} />
+<meta property="og:locale" content={ogLocale} />
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />

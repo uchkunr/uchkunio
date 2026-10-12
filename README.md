@@ -67,6 +67,18 @@ Start the body with `##` headings. The page renders the title as the `<h1>`, and
 
 Each post automatically gets its own page, tag pages, an RSS entry, a sitemap entry, and an OG image at `/og/<slug>.png`.
 
+### Translations
+
+Posts are written in Uzbek. A translation is the same filename under `en/` or `ru/`:
+
+| File | URL |
+| --- | --- |
+| `src/content/blog/<slug>.md` | `/blog/<slug>` |
+| `src/content/blog/en/<slug>.md` | `/en/blog/<slug>` |
+| `src/content/blog/ru/<slug>.md` | `/ru/blog/<slug>` |
+
+A post page links to every language it exists in and emits `hreflang` alternates. Lists, tag pages and RSS show the Uzbek originals only. The site chrome stays in English.
+
 ## Project structure
 
 ```text
@@ -75,12 +87,14 @@ src/
 ├── content.config.ts      Blog collection schema
 ├── content/blog/          Markdown posts
 ├── layouts/BaseLayout.astro   Document shell and all client-side behavior
+├── layouts/PostLayout.astro   Post page, shared by every language
 ├── components/            Header, footer, post list, icons, SEO head
 ├── lib/                   Post loading, reading time, date formatting
 ├── pages/
 │   ├── index.astro        Home
 │   ├── blog/              Post list, post pages, tag pages
-│   ├── og/[slug].png.ts   OG image generation
+│   ├── [lang]/blog/       Translated post pages (en, ru)
+│   ├── og/[...slug].png.ts  OG image generation, one per post and language
 │   └── rss.xml.ts         RSS feed
 └── styles/global.css      Tailwind entry, design tokens, prose styles
 ```

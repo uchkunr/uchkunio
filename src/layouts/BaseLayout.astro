@@ -14,15 +14,20 @@ interface Props {
   type?: "website" | "article";
   publishedDate?: string;
   tags?: string[];
+  ogLocale?: string;
+  /** Other language versions of this page, emitted as hreflang links. */
+  alternates?: { hreflang: string; href: string }[];
+  /** BCP 47 language of the page content. The site chrome is English. */
+  lang?: string;
   /** Shown in the header once the page's own heading scrolls away. */
   headerTitle?: string;
 }
 
-const { headerTitle, ...seo } = Astro.props;
+const { headerTitle, lang = "en", ...seo } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <SEOHead {...seo} />
     <Font cssVariable="--font-outfit" preload />
