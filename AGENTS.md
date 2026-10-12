@@ -43,7 +43,7 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | Route | Source | Notes |
 | --- | --- | --- |
 | `/` | `src/pages/index.astro` | Bio, latest posts, links. Person and WebSite JSON-LD |
-| `/blog` | `src/pages/blog/index.astro` | Posts grouped by year, client-side search (`/` focuses it, `?q=` prefills it) |
+| `/blog` | `src/pages/blog/index.astro` | Posts grouped by year, client-side search (`/` focuses it) and tag filter; both combine and live in the URL (`?q=`, `?tag=`) |
 | `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page (Uzbek original): title moves into the header on scroll, progress line, TOC at `xl` and up, code copy, prev/next, language links |
 | `/en/blog/[slug]`, `/ru/blog/[slug]` | `src/pages/[lang]/blog/[slug].astro` | Translated post page, same `PostLayout`, prev/next within the language |
 | `/blog/tags/[tag]` | `src/pages/blog/tags/[tag].astro` | Posts filtered by tag |

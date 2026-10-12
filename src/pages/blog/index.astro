@@ -8,6 +8,12 @@ import { getPosts, groupByYear } from "@/lib/posts";
 
 const posts = await getPosts();
 const years = groupByYear(posts);
+
+// Tags by how many posts use them. One-off tags start behind a "+N" button to keep the row short.
+const counts = new Map<string, number>();
+for (const post of posts) for (const tag of post.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+const tags = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const rare = tags.filter(([, n]) => n === 1).length;
 ---
 
 <BaseLayout title="Writing" description="Notes on backend engineering: Node.js, TypeScript, databases, and the systems around them.">
@@ -16,7 +22,7 @@ const years = groupByYear(posts);
   <div class="mx-auto max-w-[40rem] px-6 pt-12 pb-20 sm:pt-20">
     <header class="flex items-baseline justify-between" data-reveal style="--i: 0">
       <h1 class="text-[1.6rem] font-semibold tracking-[-0.02em]">Writing</h1>
-      <p class="meta">{posts.length} {posts.length === 1 ? "post" : "posts"}</p>
+      <p class="meta" data-count aria-live="polite">{posts.length} {posts.length === 1 ? "post" : "posts"}</p>
     </header>
 
     <label class="search mt-8" data-reveal style="--i: 1">
@@ -32,7 +38,23 @@ const years = groupByYear(posts);
       <kbd class="kbd">/</kbd>
     </label>
 
-    <div class="mt-4" data-reveal style="--i: 2">
+    <div class="mt-4 flex flex-wrap gap-1.5" role="group" aria-label="Filter by tag" data-tags data-reveal style="--i: 2">
+      {
+        tags.map(([tag, n]) => (
+          <button type="button" class="tag" data-tag={tag} aria-pressed="false" hidden={n === 1}>
+            {tag}
+            <span class="tag-count">{n}</span>
+          </button>
+        ))
+      }
+      {rare > 0 && (
+        <button type="button" class="tag" data-more aria-label={`Show ${rare} more tags`}>
+          +{rare}
+        </button>
+      )}
+    </div>
+
+    <div class="mt-4" data-reveal style="--i: 3">
       {
         years.map(([year, group]) => (
           <section class="pt-6" data-year>
@@ -53,25 +75,56 @@ const years = groupByYear(posts);
     const posts = [...document.querySelectorAll<HTMLElement>("[data-post]")];
     const years = [...document.querySelectorAll<HTMLElement>("[data-year]")];
     const empty = document.querySelector<HTMLElement>("[data-empty]");
+    const count = document.querySelector<HTMLElement>("[data-count]");
+    const group = document.querySelector<HTMLElement>("[data-tags]");
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-tag]")];
+    const more = document.querySelector<HTMLButtonElement>("[data-more]");
+    const params = new URLSearchParams(location.search);
+    let tag = params.get("tag");
 
+    const showAllTags = () => {
+      for (const button of buttons) button.hidden = false;
+      more?.remove();
+    };
+
+    // Search text and tag combine: a post must match both. The URL mirrors the filter so it can be shared.
     const filter = () => {
       const query = input.value.trim().toLowerCase();
       let shown = 0;
       for (const post of posts) {
-        const hit = !query || (post.dataset.search ?? "").includes(query);
+        const hit =
+          (!query || (post.dataset.search ?? "").includes(query)) &&
+          (!tag || (post.dataset.tags ?? "").split(" ").includes(tag));
         post.hidden = !hit;
         if (hit) shown++;
       }
       for (const year of years) year.hidden = !year.querySelector("[data-post]:not([hidden])");
+      for (const button of buttons) button.setAttribute("aria-pressed", String(button.dataset.tag === tag));
       if (empty) empty.hidden = shown > 0;
+      if (count) count.textContent = shown === posts.length ? `${posts.length} posts` : `${shown} of ${posts.length}`;
+
+      const url = new URL(location.href);
+      if (query) url.searchParams.set("q", input.value.trim());
+      else url.searchParams.delete("q");
+      if (tag) url.searchParams.set("tag", tag);
+      else url.searchParams.delete("tag");
+      history.replaceState(history.state, "", url);
     };
 
     input.addEventListener("input", filter);
-    const initial = new URLSearchParams(location.search).get("q");
-    if (initial) {
-      input.value = initial;
+    group?.addEventListener("click", (event) => {
+      const target = event.target as Element;
+      if (target.closest("[data-more]")) return showAllTags();
+      const button = target.closest<HTMLButtonElement>("[data-tag]");
+      if (!button) return;
+      tag = button.dataset.tag === tag ? null : (button.dataset.tag ?? null);
       filter();
-    }
+    });
+
+    if (tag && !buttons.some((button) => button.dataset.tag === tag)) tag = null;
+    if (tag && buttons.find((button) => button.dataset.tag === tag)?.hidden) showAllTags();
+    input.value = params.get("q") ?? "";
+    if (input.value || tag) filter();
   }
 
   document.addEventListener("astro:page-load", initSearch);

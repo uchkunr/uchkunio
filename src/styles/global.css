@@ -280,6 +280,19 @@ html[data-vt="theme"]::view-transition-new(root) {
   color: var(--fg);
   background: color-mix(in srgb, var(--fg) 10%, transparent);
 }
+.tag-count {
+  margin-left: 0.3rem;
+  color: var(--fg-3);
+  font-variant-numeric: tabular-nums;
+}
+/* A selected filter reads as switched on: inverted, in both themes. */
+.tag[aria-pressed="true"] {
+  color: var(--bg);
+  background: var(--fg);
+}
+.tag[aria-pressed="true"] .tag-count {
+  color: color-mix(in srgb, var(--bg) 65%, var(--fg));
+}
 
 /* ── Lists ─────────────────────────────────────────────────────────────
    One highlight element per list glides between rows on hover. It is

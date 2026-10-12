@@ -14,7 +14,11 @@ const { posts, dateStyle = "short", class: className } = Astro.props;
 <ul class:list={["list", className]} data-list>
   {
     posts.map((post) => (
-      <li data-post data-search={[post.data.title, post.data.excerpt, ...post.data.tags].join(" ").toLowerCase()}>
+      <li
+        data-post
+        data-tags={post.data.tags.join(" ")}
+        data-search={[post.data.title, post.data.excerpt, ...post.data.tags].join(" ").toLowerCase()}
+      >
         <a href={postUrl(post)} class="row" data-row>
           <span class="row-title text-balance">{post.data.title}</span>
           <time class="row-meta" datetime={post.data.date}>{formatDate(post.data.date, dateStyle)}</time>
