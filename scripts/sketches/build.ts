@@ -28,6 +28,36 @@ function race(cycle: number, lanes: { name: string; seconds: number }[]): string
     .join("");
 }
 
+interface Lane {
+  label: string;
+  /** Animation length in seconds; scale real timings yourself and say so in the subtitle. */
+  seconds: number;
+  /** Text shown at the end of the bar once it is full. */
+  value: string;
+  fill: string;
+  stroke: string;
+  valueColor?: string;
+}
+
+/** The standard animated benchmark: one bar per lane filling in (scaled) real time. */
+function raceChart(title: string, subtitle: string, lanes: Lane[], cycle = 4.5, width = 760): string {
+  const labelWidth = 225;
+  const max = Math.max(...lanes.map((l) => l.seconds));
+  const scale = (width - labelWidth - 130) / max;
+  const s = new Sketch(width, 70 + lanes.length * 64, title);
+  s.text(subtitle, 30, 36, { size: 17, color: MUTED });
+  const named = lanes.map((lane, i) => ({ ...lane, name: `l${i}` }));
+  named.forEach((lane, i) => {
+    const y = 66 + i * 64;
+    const w = Math.max(lane.seconds * scale, 8);
+    s.text(lane.label, 30, y + 26, { size: 19 });
+    s.line(labelWidth, y + 40, width - 60, y + 40, { stroke: MUTED, strokeWidth: 1, roughness: 0.6 });
+    s.group(`class="${lane.name}-bar"`, (g) => g.rect(labelWidth, y, w, 34, { fill: lane.fill, stroke: lane.stroke }));
+    s.group(`class="${lane.name}-label"`, (g) => g.text(lane.value, labelWidth + w + 12, y + 25, { size: 19, color: lane.valueColor ?? INK }));
+  });
+  return s.toSVG(race(cycle, named));
+}
+
 /** An element visible from `from` to `to` seconds of every cycle. */
 function during(cls: string, cycle: number, from: number, to: number): string {
   const frames: string[] = [];
@@ -431,6 +461,267 @@ sketches["microservices/jitter"] = () => {
   s.text("the same 1000, spread out", 470 + 180, 200, { anchor: "middle", size: 17, color: STROKE.green });
   return s.toSVG();
 };
+
+// alter table ------------------------------------------------------------------------------------
+
+sketches["alter/lock-queue"] = () => {
+  const s = new Sketch(860, 300, "A long SELECT holds the lock, ALTER TABLE waits for it, and every new query waits behind ALTER");
+  s.rect(20, 120, 110, 60, { fill: FILL.gray });
+  s.text("orders", 75, 157, { anchor: "middle", size: 20 });
+
+  s.rect(200, 30, 210, 62, { fill: FILL.green, stroke: STROKE.green });
+  s.text("A: SELECT", 305, 58, { anchor: "middle", size: 19 });
+  s.text("long transaction", 305, 81, { anchor: "middle", size: 15, color: MUTED });
+  s.arrow(195, 66, 135, 128, { stroke: STROKE.green });
+  s.text("holds the lock", 40, 70, { size: 15, color: STROKE.green });
+
+  s.text("lock queue", 200, 178, { size: 16, color: MUTED });
+  s.rect(200, 190, 200, 62, { fill: FILL.red, stroke: STROKE.red });
+  s.text("B: ALTER TABLE", 300, 218, { anchor: "middle", size: 19 });
+  s.text("waits for A", 300, 241, { anchor: "middle", size: 15, color: MUTED });
+  s.arrow(195, 215, 135, 170, { stroke: STROKE.red });
+
+  s.rect(440, 190, 140, 62, { fill: FILL.gray });
+  s.text("C: SELECT", 510, 218, { anchor: "middle", size: 19 });
+  s.text("waits for B", 510, 241, { anchor: "middle", size: 15, color: MUTED });
+  s.arrow(435, 221, 405, 221);
+  s.rect(620, 190, 110, 62, { fill: FILL.gray });
+  s.text("SELECT", 675, 227, { anchor: "middle", size: 19 });
+  s.arrow(615, 221, 585, 221);
+  s.rect(770, 190, 70, 62, { fill: FILL.gray });
+  s.text("...", 805, 227, { anchor: "middle", size: 19 });
+  s.arrow(765, 221, 735, 221);
+  s.text("every new query joins the queue behind ALTER", 520, 288, { anchor: "middle", size: 16, color: STROKE.red });
+  return s.toSVG();
+};
+
+sketches["alter/wait-race"] = () =>
+  raceChart("A plain SELECT waited 4.09 s behind ALTER TABLE without lock_timeout and 0.09 s with lock_timeout = 1s", "how long SELECT C waited, real time", [
+    { label: "no lock_timeout", seconds: 4.09, value: "4.09 s", fill: FILL.red, stroke: STROKE.red },
+    { label: "lock_timeout 1s", seconds: 0.09, value: "0.09 s", fill: FILL.green, stroke: STROKE.green },
+  ], 5.5);
+
+// keyset pagination -------------------------------------------------------------------------------
+
+sketches["keyset/offset-vs-keyset"] = () => {
+  const s = new Sketch(860, 320, "OFFSET reads 990,020 index entries to return 20; keyset jumps to the cursor and reads 20");
+  const x0 = 160;
+  const end = x0 + 653;
+  s.text("OFFSET", 20, 87, { size: 20 });
+  s.rect(x0, 60, 660, 40, { fill: FILL.gray });
+  s.rect(end, 60, 8, 40, { fill: FILL.green, fillStyle: "solid", stroke: STROKE.green, roughness: 0.5 });
+  s.arrow(x0, 122, end - 6, 122, { stroke: STROKE.red });
+  s.text("reads 990 020 index entries, returns 20", 490, 152, { anchor: "middle", size: 16, color: STROKE.red });
+
+  s.text("keyset", 20, 237, { size: 20 });
+  s.rect(x0, 210, 660, 40);
+  s.rect(end, 210, 8, 40, { fill: FILL.green, fillStyle: "solid", stroke: STROKE.green, roughness: 0.5 });
+  s.arrow(end + 4, 178, end + 4, 205, { stroke: STROKE.green });
+  s.text("cursor", end - 10, 172, { anchor: "end", size: 16, color: STROKE.green });
+  s.text("jumps to the cursor, reads 20", 490, 285, { anchor: "middle", size: 16, color: STROKE.green });
+  s.text("1 000 000 rows in the index", 490, 40, { anchor: "middle", size: 15, color: MUTED });
+  return s.toSVG();
+};
+
+sketches["keyset/race"] = () =>
+  raceChart("Page 49 501 of a 1M-row table: OFFSET 84.8 ms, keyset 0.047 ms", "1 000 000 rows, page 49 501, slowed down 30x", [
+    { label: "OFFSET 990000", seconds: (84.783 / 1000) * 30, value: "84.8 ms", fill: FILL.red, stroke: STROKE.red },
+    { label: "keyset", seconds: (0.047 / 1000) * 30, value: "0.047 ms", fill: FILL.green, stroke: STROKE.green },
+  ]);
+
+// connection pool ---------------------------------------------------------------------------------
+
+sketches["pool/throughput"] = () => {
+  const s = new Sketch(860, 345, "Transactions per second on 2 CPUs: TPC-B 3614, 665, 689 and SELECT-only 6561, 5837, 5339 at 10, 100, 200 connections");
+  s.text("transactions per second, Postgres on 2 CPUs", 30, 36, { size: 16, color: MUTED });
+  s.rect(560, 56, 20, 16, { fill: FILL.blue, fillStyle: "solid", stroke: STROKE.blue, roughness: 0.5 });
+  s.text("TPC-B (writes)", 590, 70, { size: 16 });
+  s.rect(560, 84, 20, 16, { fill: FILL.green, fillStyle: "solid", stroke: STROKE.green, roughness: 0.5 });
+  s.text("SELECT only", 590, 98, { size: 16 });
+  const base = 280;
+  const unit = 170 / 7000;
+  s.line(120, base, 820, base, { stroke: MUTED, strokeWidth: 1 });
+  const groups = [
+    { label: "10", tpcb: 3614, select: 6561 },
+    { label: "100", tpcb: 665, select: 5837 },
+    { label: "200", tpcb: 689, select: 5339 },
+  ];
+  groups.forEach((g, i) => {
+    const center = 230 + i * 240;
+    for (const [value, x, fill, stroke] of [
+      [g.tpcb, center - 68, FILL.blue, STROKE.blue],
+      [g.select, center + 8, FILL.green, STROKE.green],
+    ] as const) {
+      const h = value * unit;
+      s.rect(x, base - h, 60, h, { fill, stroke });
+      s.text(String(value), x + 30, base - h - 10, { anchor: "middle", size: 16 });
+    }
+    s.text(g.label, center, base + 28, { anchor: "middle", size: 20 });
+  });
+  s.text("connections", 470, base + 58, { anchor: "middle", size: 16, color: MUTED });
+  return s.toSVG();
+};
+
+sketches["pool/latency-race"] = () =>
+  raceChart("Average TPC-B latency: 2.8 ms with 10 connections, 150.5 ms with 100", "average latency per transaction, slowed down 20x", [
+    { label: "10 connections", seconds: (2.767 / 1000) * 20, value: "2.8 ms", fill: FILL.green, stroke: STROKE.green },
+    { label: "100 connections", seconds: (150.481 / 1000) * 20, value: "150.5 ms", fill: FILL.red, stroke: STROKE.red },
+  ]);
+
+// idempotency -------------------------------------------------------------------------------------
+
+sketches["idempotency/retries"] = () => {
+  const s = new Sketch(860, 300, "Five retries with the same key reach the API; one charges, four get the stored response");
+  s.rect(20, 115, 110, 70, { fill: FILL.gray });
+  s.text("client", 75, 156, { anchor: "middle", size: 20 });
+  s.rect(330, 115, 130, 70, { fill: FILL.violet, stroke: STROKE.violet });
+  s.text("API", 395, 156, { anchor: "middle", size: 20 });
+  s.arrow(135, 135, 325, 135);
+  s.text("5 retries, same key", 230, 122, { anchor: "middle", size: 15, color: MUTED });
+  s.arrow(325, 168, 135, 168, { dashed: true, stroke: MUTED });
+  s.rect(640, 30, 200, 70, { fill: FILL.green, stroke: STROKE.green });
+  s.text("payments", 740, 62, { anchor: "middle", size: 20 });
+  s.text("1 row", 740, 86, { anchor: "middle", size: 15, color: MUTED });
+  s.rect(640, 200, 200, 70, { fill: FILL.yellow });
+  s.text("idempotency_keys", 740, 241, { anchor: "middle", size: 18 });
+  s.arrow(465, 130, 635, 70);
+  s.arrow(465, 170, 635, 230);
+
+  const env = (cls: string) =>
+    s.group(`class="${cls}"`, (g) => {
+      g.rect(-14, -10, 28, 20, { fill: FILL.red, fillStyle: "solid", stroke: STROKE.red, roughness: 0.6 });
+      g.line(-14, -10, 0, 2, { stroke: STROKE.red, roughness: 0.4 });
+      g.line(0, 2, 14, -10, { stroke: STROKE.red, roughness: 0.4 });
+    });
+  const motion: string[] = [];
+  const still: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    env(`e${i}`);
+    const dy = i * 7;
+    const frames =
+      i === 0
+        ? [[0, 75, 100], [10, 75, 100], [30, 395, 100], [45, 395, 100], [60, 600, 60], [100, 600, 60]]
+        : [[0, 75, 100 + dy], [10 + i * 2, 75, 100 + dy], [30 + i * 2, 395, 100 + dy], [55, 395, 100 + dy], [75, 75, 200 + dy - 7], [100, 75, 200 + dy - 7]];
+    motion.push(`.e${i} { animation: e${i} 5s ease-in-out infinite; } @keyframes e${i} { ${frames.map(([p, x, y]) => `${p}% { transform: translate(${x}px, ${y}px); }`).join(" ")} }`);
+    still.push(`.e${i} { transform: translate(${i === 0 ? 600 : 75}px, ${i === 0 ? 60 : 200 + dy - 7}px); }`);
+  }
+  s.group(`class="charged"`, (g) => g.text("201, charged once", 600, 120, { anchor: "middle", size: 16, color: STROKE.green }));
+  s.group(`class="replayed"`, (g) => g.text("4 x 200, replayed", 20, 285, { size: 16, color: STROKE.green }));
+  motion.push(during("charged", 5, 3, 5), during("replayed", 5, 3.75, 5));
+  return s.toSVG(motion.join(""), still.join(""));
+};
+
+sketches["idempotency/flow"] = () => {
+  const s = new Sketch(860, 360, "The first request claims the key and charges; a retry with the same key gets the stored response");
+  const col = { client: 100, api: 410, db: 790 };
+  for (const [name, x] of [["client", col.client], ["API", col.api], ["Postgres", col.db]] as const) {
+    s.rect(x - 70, 15, 140, 48, { fill: name === "Postgres" ? FILL.blue : name === "API" ? FILL.violet : FILL.gray, stroke: name === "Postgres" ? STROKE.blue : name === "API" ? STROKE.violet : INK });
+    s.text(name, x, 46, { anchor: "middle", size: 19 });
+    s.line(x, 68, x, 345, { stroke: MUTED, strokeWidth: 1, dashed: true });
+  }
+  const msg = (y: number, from: number, to: number, label: string, color = INK) => {
+    s.arrow(from, y, to, y, { stroke: color });
+    s.text(label, (from + to) / 2, y - 8, { anchor: "middle", size: 15, color });
+  };
+  msg(100, col.client, col.api, "POST /charge, key k");
+  msg(135, col.api, col.db, "INSERT key ON CONFLICT DO NOTHING");
+  msg(170, col.db, col.api, "claimed, charge and store", STROKE.green);
+  msg(205, col.api, col.client, "201 paymentId 1", STROKE.green);
+  msg(250, col.client, col.api, "retry, same key k");
+  msg(285, col.api, col.db, "INSERT key: conflict");
+  msg(320, col.db, col.api, "stored response", STROKE.green);
+  msg(345, col.api, col.client, "200 paymentId 1", STROKE.green);
+  return s.toSVG();
+};
+
+// graceful shutdown -------------------------------------------------------------------------------
+
+sketches["shutdown/timeline"] = () => {
+  const s = new Sketch(860, 300, "SIGTERM flips readiness, the server stops accepting after 1 s, finishes in-flight requests and exits at 2 s");
+  const x = (t: number) => 190 + t * 240;
+  const lanes = [
+    { label: "in-flight", to: 2.0, fill: FILL.blue, stroke: STROKE.blue },
+    { label: "accepting", to: 1.5, fill: FILL.green, stroke: STROKE.green },
+    { label: "LB routing", to: 1.0, fill: FILL.gray, stroke: MUTED },
+  ];
+  lanes.forEach((lane, i) => {
+    const y = 40 + i * 58;
+    s.text(lane.label, 20, y + 23, { size: 18 });
+    s.rect(x(0), y, x(lane.to) - x(0), 32, { fill: lane.fill, stroke: lane.stroke, dashed: lane.label === "LB routing" });
+  });
+  const marks = [
+    { t: 0.5, label: "SIGTERM", sub: "ready = false", color: STROKE.red },
+    { t: 1.5, label: "close()", sub: "stop accepting", color: INK },
+    { t: 2.0, label: "exit 0", sub: "last response", color: STROKE.green },
+  ];
+  for (const m of marks) {
+    s.line(x(m.t), 30, x(m.t), 220, { stroke: m.color, strokeWidth: 1.4, dashed: true });
+    s.text(m.label, x(m.t), 245, { anchor: "middle", size: 17, color: m.color });
+    s.text(m.sub, x(m.t), 268, { anchor: "middle", size: 15, color: MUTED });
+  }
+  s.arrow(x(0), 222, x(2.5), 222, { stroke: MUTED, strokeWidth: 1 });
+  s.text("0 s", x(0), 245, { anchor: "middle", size: 15, color: MUTED });
+  return s.toSVG();
+};
+
+sketches["shutdown/in-flight"] = () => {
+  const s = new Sketch(760, 250, "20 two-second requests, SIGTERM at 0.5 s: the default server drops all 20, the graceful one completes all 20");
+  s.text("20 requests of 2 s each, SIGTERM at 0.5 s, real time", 30, 36, { size: 17, color: MUTED });
+  const x0 = 170;
+  const scale = 230;
+  const lanes = [
+    { name: "kill", label: "default", seconds: 0.5, fill: FILL.red, stroke: STROKE.red, value: "20 x socket error", color: STROKE.red },
+    { name: "grace", label: "graceful", seconds: 2.0, fill: FILL.green, stroke: STROKE.green, value: "20 x 200", color: STROKE.green },
+  ];
+  lanes.forEach((lane, i) => {
+    const y = 70 + i * 70;
+    s.text(lane.label, 30, y + 26, { size: 20 });
+    s.line(x0, y + 40, x0 + 2.1 * scale, y + 40, { stroke: MUTED, strokeWidth: 1, roughness: 0.6 });
+    s.group(`class="${lane.name}-bar"`, (g) => g.rect(x0, y, lane.seconds * scale, 34, { fill: lane.fill, stroke: lane.stroke }));
+    s.group(`class="${lane.name}-label"`, (g) => g.text(lane.value, x0 + lane.seconds * scale + 12, y + 25, { size: 19, color: lane.color }));
+  });
+  s.line(x0 + 0.5 * scale, 58, x0 + 0.5 * scale, 215, { stroke: STROKE.red, strokeWidth: 1.4, dashed: true });
+  s.text("SIGTERM", x0 + 0.5 * scale, 238, { anchor: "middle", size: 16, color: STROKE.red });
+  return s.toSVG(race(3.5, lanes));
+};
+
+// event loop --------------------------------------------------------------------------------------
+
+sketches["event-loop/blocked"] = () => {
+  const s = new Sketch(860, 330, "JSON.parse on the main thread blocks it for 286 ms and 23 health checks queue up; in a worker the main thread keeps answering");
+  const x = (t: number) => 170 + t * 330;
+  const ticks = (y: number, skipFrom = 99, skipTo = -1) => {
+    for (let t = 0.02; t < 2; t += 0.1) {
+      if (t > skipFrom && t < skipTo) continue;
+      s.rect(x(t), y, 7, 26, { fill: FILL.green, fillStyle: "solid", stroke: STROKE.green, roughness: 0.4 });
+    }
+  };
+  s.text("main thread", 20, 103, { size: 18 });
+  ticks(84, 0.95, 1.33);
+  s.rect(x(1.0), 80, 0.286 * 330, 34, { fill: FILL.red, stroke: STROKE.red });
+  s.text("JSON.parse 286 ms", x(1.0) + 47, 140, { anchor: "middle", size: 16, color: STROKE.red });
+  for (let i = 0; i < 23; i++) {
+    const col = i % 8;
+    const row = Math.floor(i / 8);
+    s.rect(x(1.0) + col * 12, 62 - row * 15, 9, 11, { fill: FILL.gray, fillStyle: "solid", stroke: INK, roughness: 0.4, strokeWidth: 1 });
+  }
+  s.text("23 health checks wait", x(1.0) + 105, 50, { size: 15, color: MUTED });
+
+  s.line(20, 175, 840, 175, { stroke: MUTED, strokeWidth: 1, dashed: true });
+
+  s.text("main thread", 20, 223, { size: 18 });
+  ticks(204);
+  s.text("worker", 20, 283, { size: 18 });
+  s.rect(x(1.0), 262, 0.341 * 330, 34, { fill: FILL.violet, stroke: STROKE.violet });
+  s.text("JSON.parse 341 ms", x(1.0) + 56, 318, { anchor: "middle", size: 16, color: STROKE.violet });
+  return s.toSVG();
+};
+
+sketches["event-loop/p99-race"] = () =>
+  raceChart("/health p99 during a 60 MB import: 259 ms with JSON.parse on the main thread, 4.2 ms in a worker", "/health p99 during a 60 MB import, slowed down 10x", [
+    { label: "main thread", seconds: (259.2 / 1000) * 10, value: "259.2 ms", fill: FILL.red, stroke: STROKE.red },
+    { label: "worker thread", seconds: (4.2 / 1000) * 10, value: "4.2 ms", fill: FILL.green, stroke: STROKE.green },
+  ]);
 
 // ---------------------------------------------------------------------------------------------
 
