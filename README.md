@@ -49,6 +49,8 @@ pnpm astro dev stop
 
 ## Writing a post
 
+The full playbook (measuring, writing, sketches, translations, checks) is in [AGENTS.md](AGENTS.md#writing-a-post). The short version:
+
 Create `src/content/blog/<slug>.md`. The filename becomes the URL: `/blog/<slug>`.
 
 ```yaml
@@ -86,6 +88,7 @@ Diagrams are hand-drawn SVGs generated from code with [rough.js](https://roughjs
 ```bash
 pnpm sketches            # every sketch into public/sketches/<post>/<name>.svg
 pnpm sketches outbox     # only names starting with "outbox"
+pnpm sketches:preview    # PNG previews in <tmpdir>/sketches-preview
 ```
 
 Animations are CSS inside the SVG and only run when the reader allows motion. Sketches are drawn for a light background; dark mode inverts them the way Excalidraw does. Labels stay technical and language-neutral so one image serves every translation; the alt text is translated in each post. Recordings live in `public/media/` (MP4 with a poster frame rather than multi-megabyte GIFs).
