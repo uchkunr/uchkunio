@@ -1,6 +1,6 @@
 ---
 title: "Jonli video tahlilida kechikishning oldini olish"
-date: "2026-08-25"
+date: "2026-07-28"
 excerpt: "YardLens kamera oqimidagi mashina va odamlarni sanaydi. Uni yozishdagi asosiy saboq: kadrlarni navbatga qo'ygan tizim kechikishni yig'adi, ularni tashlab yuborgan tizim esa jonli bo'lib qoladi."
 tags:
   - python

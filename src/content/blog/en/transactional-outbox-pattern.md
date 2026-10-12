@@ -1,6 +1,6 @@
 ---
 title: "Transactional Outbox: why data and messages must be written in one transaction"
-date: "2026-10-06"
+date: "2026-08-25"
 excerpt: "Writing to the database and sending a message to a broker are two separate operations, and no ordering of them links the two reliably. This post explains how the outbox solves the problem, how to write the relay, and when the pattern is unnecessary."
 tags:
   - architecture

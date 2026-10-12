@@ -1,6 +1,6 @@
 ---
 title: "Multi-tenancy in NestJS and Postgres 18: isolating tenants with Row-Level Security"
-date: "2026-09-15"
+date: "2026-08-11"
 excerpt: "A single forgotten WHERE exposes one customer's data to another. This post moves the tenant check from application code into the database, explains a hidden trap in the connection pool, and builds a complete solution in NestJS."
 tags:
   - postgresql

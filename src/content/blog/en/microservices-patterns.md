@@ -1,6 +1,6 @@
 ---
 title: "Core microservice patterns and the problem each one solves"
-date: "2026-10-12"
+date: "2026-09-01"
 excerpt: "In microservices a function call goes over the network, where it can be delayed, lost or executed twice. This post covers eight patterns, the problem each one solves, and working code for them."
 tags:
   - architecture

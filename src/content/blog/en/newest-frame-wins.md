@@ -1,6 +1,6 @@
 ---
 title: "Preventing latency buildup in live video analysis"
-date: "2026-08-25"
+date: "2026-07-28"
 excerpt: "YardLens counts vehicles and people in a camera stream. The main lesson from building it is that a system which queues frames accumulates latency, while a system which drops them stays live."
 tags:
   - python

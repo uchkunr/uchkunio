@@ -1,6 +1,6 @@
 ---
 title: "Transactional Outbox: ma'lumot va xabar nega bir tranzaksiyada yozilishi kerak"
-date: "2026-10-06"
+date: "2026-08-25"
 excerpt: "Bazaga yozish va brokerga xabar yuborish ikki alohida amal, ularni hech qanday tartibda ishonchli bog'lab bo'lmaydi. Outbox bu muammoni qanday yechadi, relay qanday yoziladi va pattern qachon ortiqcha."
 tags:
   - architecture

@@ -1,6 +1,6 @@
 ---
 title: "A queue in Postgres: sending a message in the same transaction as the data"
-date: "2026-08-04"
+date: "2026-07-14"
 excerpt: "When a row written to the database and the message about it are stored in separate systems, the two can drift apart. With PGMQ both fit into a single transaction, and pgmq-ts was written to preserve exactly that property."
 tags:
   - postgresql

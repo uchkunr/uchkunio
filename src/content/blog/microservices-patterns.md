@@ -1,6 +1,6 @@
 ---
 title: "Mikroservislardagi asosiy patternlar: har biri qaysi muammoni yechadi"
-date: "2026-10-12"
+date: "2026-09-01"
 excerpt: "Mikroservisda funksiya chaqiruvi tarmoqdan o'tadi: u kechikadi, yo'qoladi, ikki marta bajariladi. Sakkizta pattern, ularning har biri yechadigan muammo va ishlab turgan kod."
 tags:
   - architecture
