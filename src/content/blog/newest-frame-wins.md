@@ -11,6 +11,8 @@ tags:
 
 [YardLens](https://github.com/uchkunr/yardlens) kamera oqimidan transport va odamlarni aniqlaydi, ularni kuzatib boradi va chizilgan chiziqdan o'tganlarni sanaydi. Aniqlashni YOLO, kuzatishni ByteTrack bajaradi, natijalar esa veb-panelga jonli uzatiladi. Quyida loyihadagi eng muhim qarorlar va ularning sababi keltirilgan.
 
+<video src="/media/yardlens-demo.mp4" poster="/media/yardlens-demo.jpg" width="900" height="562" autoplay loop muted playsinline aria-label="YardLens paneli: kameralar, chiziqdan o'tishlar va jonli voqealar"></video>
+
 ## Navbat kechikishni yig'adi
 
 Faraz qilaylik, kamera soniyasiga 25 kadr beradi, protsessordagi model esa ulardan atigi 5 tasini tahlil qila oladi. Har bir kadr navbatga qo'yilsa, tahlil qilinmagan kadrlar to'xtovsiz ko'payib boradi:
@@ -27,6 +29,8 @@ for minutes in (1, 10, 60):
 10 daqiqadan keyin kechikish: 40 daqiqa
 60 daqiqadan keyin kechikish: 240 daqiqa
 ```
+
+![Navbat bilan kechikish har soniya o'sadi, faqat oxirgi kadr saqlansa u bir kadrdan oshmaydi](/sketches/yardlens/queue-vs-latest.svg)
 
 Bir soatdan so'ng tizim to'rt soat oldingi voqeani jonli deb ko'rsatadi. Shu sababli YardLens'da kadrlar navbati umuman yo'q: kamerani o'qiydigan oqim faqat oxirgi kadrni saqlaydi va har bir yangi kadr oldingisining o'rnini egallaydi.
 
@@ -46,6 +50,8 @@ with self._frame_ready:
     frame = self._latest_frame
     last_seq = self._frame_seq
 ```
+
+![Har bir kamera: capture oqimi faqat oxirgi kadrni saqlaydi, tahlil 3 fps va tasvirlash 15 fps uni mustaqil o'qiydi](/sketches/yardlens/threads.svg)
 
 ## Tahlil va tasvir turli tezlikda ishlaydi
 

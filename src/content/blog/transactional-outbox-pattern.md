@@ -45,6 +45,8 @@ COMMIT;
 
 Endi buyurtma va voqea yoki birga mavjud, yoki birga yo'q. Uchinchi holat bo'lmaydi, chunki bu Postgres'ning oddiy tranzaksiyasi.
 
+![Buyurtma va outbox qatori birga commit bo'ladi, relay uni Kafka'ga yuboradi, iste'molchi takrorlarni o'tkazib yuboradi](/sketches/outbox/flow.svg)
+
 ## Relay
 
 Relay yuborilmagan qatorlarni oladi, brokerga jo'natadi va belgilaydi. Bir nechta relay parallel ishlashi uchun qatorlar `FOR UPDATE SKIP LOCKED` bilan olinadi:
@@ -106,6 +108,8 @@ tx A: commit qildi
 relay: id > 8  ->  (bo'sh)
 hech qachon yuborilmaydi: 7
 ```
+
+![A tranzaksiyasi id 7 ni oladi, lekin B ning id 8 idan keyin commit qiladi; kursor bilan o'qiydigan relay 7 ni o'tkazib yuboradi](/sketches/outbox/cursor-gap.svg)
 
 7-xabar hech qachon yuborilmaydi va buni hech kim sezmaydi. `published_at IS NULL` sharti bu xatodan xoli: kechikib commit bo'lgan qator keyingi aylanishda baribir topiladi.
 

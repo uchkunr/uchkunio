@@ -513,9 +513,31 @@ html[data-vt="theme"]::view-transition-new(root) {
   background: var(--line);
   margin-block: 2.5em;
 }
-.prose img {
+.prose img,
+.prose video {
+  display: block;
+  width: 100%;
+  height: auto;
   border-radius: 8px;
   border: 1px solid var(--line);
+}
+/* Sketches are hand-drawn diagrams on a transparent background: no frame, and dark mode flips
+   them the way Excalidraw does, so a single SVG serves both themes. */
+.prose img[src^="/sketches/"] {
+  border: 0;
+  border-radius: 0;
+}
+.dark .prose img[src^="/sketches/"] {
+  filter: invert(93%) hue-rotate(180deg);
+}
+/* Sketches are drawn 760 to 900px wide; on wider screens they break out of the column by 3rem
+   on each side, which still clears the TOC's 4rem gutter. */
+@media (min-width: 52rem) {
+  .prose img[src^="/sketches/"] {
+    width: calc(100% + 6rem);
+    max-width: none;
+    margin-inline: -3rem;
+  }
 }
 .prose table {
   width: 100%;

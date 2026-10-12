@@ -29,6 +29,10 @@ await sql.begin(async (tx) => {
 
 Tranzaksiya ichida xato yuz bersa, na buyurtma, na xabar saqlanadi. Commit bo'lmaguncha esa xabarni boshqa o'quvchilar ko'rmaydi.
 
+![Ikki tizimda jarayon o'chsa xabar yo'qoladi, bitta Postgres tranzaksiyasida qator va xabar birga saqlanadi](/sketches/pgmq/dual-write.svg)
+
+![Xato bergan tranzaksiyadan na buyurtma, na xabar qoladi; xatosiz tranzaksiya ikkalasini saqlaydi](/media/pgmq-ts-demo.gif)
+
 ## Ulanishni kutubxona boshqarmaydi
 
 Bu imkoniyat saqlanib qolishi uchun [pgmq-ts](https://github.com/uchkunr/pgmq-ts) ulanish ochmaydi va tranzaksiyani o'zi boshlamaydi. U so'rovni bajara oladigan istalgan obyektni qabul qiladi:

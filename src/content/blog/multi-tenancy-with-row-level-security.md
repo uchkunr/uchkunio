@@ -80,6 +80,8 @@ ERROR:  new row violates row-level security policy for table "invoices"
 
 `WHERE` yozilmagan, lekin tenant A faqat o'z qatorlarini ko'radi. Uning nomidan tenant B'ga yozish urinishini esa baza rad etadi.
 
+![Interceptor tranzaksiya uchun tenantni o'rnatadi, RLS siyosati faqat shu tenant qatorlarini qaytaradi](/sketches/multi-tenancy/rls.svg)
+
 ## Connection pool'dagi tuzoq
 
 Tenantni oddiy `SET` bilan bersangiz, qiymat ulanishda qolib ketadi. Pool shu ulanishni keyingi so'rovga beradi:
@@ -182,5 +184,7 @@ CREATE INDEX invoices_tenant_idx ON invoices (tenant_id, id);
 Indekssiz:  Parallel Seq Scan, Rows Removed by Filter: 333000   Execution Time: 118.757 ms
 Indeks bilan: Bitmap Index Scan on invoices_tenant_idx           Execution Time: 3.159 ms
 ```
+
+![1 million qatorda bitta tenant yig'indisi: Seq Scan 118.8 ms, indeks bilan 3.2 ms](/sketches/multi-tenancy/index-race.svg)
 
 Siyosatdagi `current_setting(...)` planner uchun oddiy qiymatdek ko'rinadi va indeks shartiga to'g'ridan-to'g'ri tushadi: 37 barobar tezroq, ilovada bitta ham qator o'zgarmagan holda.

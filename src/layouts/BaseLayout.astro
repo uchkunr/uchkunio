@@ -224,6 +224,14 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       table.replaceWith(wrap);
       wrap.append(table);
     });
+    // Demo videos autoplay like GIFs; with reduced motion they wait for the reader instead.
+    if (reducedMotion()) {
+      document.querySelectorAll<HTMLVideoElement>(".prose video[autoplay]").forEach((video) => {
+        video.autoplay = false;
+        video.pause();
+        video.controls = true;
+      });
+    }
   }
 
   document.addEventListener("click", async (event) => {

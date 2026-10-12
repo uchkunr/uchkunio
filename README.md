@@ -79,6 +79,17 @@ Posts are written in Uzbek. A translation is the same filename under `en/` or `r
 
 A post page links to every language it exists in and emits `hreflang` alternates. Lists, tag pages and RSS show the Uzbek originals only. The site chrome stays in English.
 
+### Sketches and media
+
+Diagrams are hand-drawn SVGs generated from code with [rough.js](https://roughjs.com) and Excalidraw's Virgil font (OFL-1.1, text converted to paths). Define one in `scripts/sketches/build.ts` and run:
+
+```bash
+pnpm sketches            # every sketch into public/sketches/<post>/<name>.svg
+pnpm sketches outbox     # only names starting with "outbox"
+```
+
+Animations are CSS inside the SVG and only run when the reader allows motion. Sketches are drawn for a light background; dark mode inverts them the way Excalidraw does. Labels stay technical and language-neutral so one image serves every translation; the alt text is translated in each post. Recordings live in `public/media/` (MP4 with a poster frame rather than multi-megabyte GIFs).
+
 ## Project structure
 
 ```text
@@ -97,6 +108,9 @@ src/
 │   ├── og/[...slug].png.ts  OG image generation, one per post and language
 │   └── rss.xml.ts         RSS feed
 └── styles/global.css      Tailwind entry, design tokens, prose styles
+scripts/sketches/          Sketch generator, Virgil font and its license
+public/sketches/           Generated sketches (do not edit by hand)
+public/media/              Recordings embedded in posts
 ```
 
 ## Deployment

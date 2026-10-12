@@ -24,6 +24,8 @@ $ curl -s https://registry.npmjs.org/typescript/latest | wc -c
 
 Birinchi manzil paketning butun tarixini qaytaradi: har bir versiya, uning bog'liqliklari va chiqqan sanasi. `typescript` uchun bu 15 megabayt JSON demakdir. Ikkinchi manzil esa faqat oxirgi versiyani beradi.
 
+![GET /typescript 15.8 MB qaytaradi, GET /typescript/latest esa atigi 4.8 KB](/sketches/npm/payload.svg)
+
 `ncu` birinchi manzildan foydalanadi va buning asosli sababi bor: `--target minor` kabi rejimlar versiyalar tarixisiz ishlamaydi. Bu imkoniyatlarni saqlagan holda so'rov qatlamini qayta yozish katta va xavfli o'zgarish bo'lardi. Menga esa ularning birortasi kerak emas edi, shu bois alohida kichik vosita yozishga qaror qildim.
 
 ## fast-ncu
@@ -61,6 +63,8 @@ Sinov 78 ta bog'liqligi bo'lgan loyihada, ya'ni `ncu` repo'sining o'zida o'tkazi
 | `ncu` | standart | 2.75 s |
 | `fast-ncu` | 15 | 2.70 s |
 | `fast-ncu` | 30 | 0.88 s |
+
+![78 ta bog'liqlikni tekshirish: ncu 2.75 s, fast-ncu 15 ta so'rov bilan 2.70 s, 30 ta bilan 0.88 s](/sketches/npm/race.svg)
 
 Javob hajmi uch ming barobar kichraygan bo'lsa ham, ikkinchi qatorda vaqt deyarli o'zgarmagan. Demak, vaqt ma'lumotni yuklab olishga emas, har bir javobni kutishga sarflanadi:
 
