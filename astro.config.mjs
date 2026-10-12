@@ -21,6 +21,16 @@ export default defineConfig({
       subsets: ["latin"],
       fallbacks: ["sans-serif"],
     },
+    // Outfit has no Cyrillic. Russian posts are set in Open Sans; BaseLayout loads it only there.
+    {
+      provider: fontProviders.google(),
+      name: "Open Sans",
+      cssVariable: "--font-open-sans",
+      weights: ["400 600"],
+      styles: ["normal"],
+      subsets: ["cyrillic", "latin"],
+      fallbacks: ["sans-serif"],
+    },
   ],
   vite: {
     plugins: [tailwindcss()],

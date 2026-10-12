@@ -6,7 +6,7 @@ import sharp from "sharp";
 import fs from "node:fs";
 import { formatDate } from "@/lib/date";
 import { getCollection } from "astro:content";
-import { readingTime, type Post } from "@/lib/posts";
+import { localeOf, readingTime, type Post } from "@/lib/posts";
 
 // One image per post and language: /og/<slug>.png, /og/en/<slug>.png, /og/ru/<slug>.png.
 export async function getStaticPaths() {
@@ -15,8 +15,8 @@ export async function getStaticPaths() {
 }
 
 // Satori needs TTF/OTF. Google Fonts serves TTF to clients without a modern
-// user agent, which is what fetch() sends. Outfit has no Cyrillic, so Noto Sans
-// covers the Russian titles. Each family is fetched once for all OG images.
+// user agent, which is what fetch() sends. Outfit has no Cyrillic, so Russian
+// cards are set in Open Sans, like Russian pages. Each family is fetched once.
 type Font = SatoriOptions["fonts"][number];
 const fontCache = new Map<string, Promise<ArrayBuffer | undefined>>();
 
@@ -52,20 +52,18 @@ function systemFont(): ArrayBuffer {
   throw new Error("No font available for OG image generation");
 }
 
-async function getFonts(): Promise<Font[]> {
-  const [outfit, noto] = await Promise.all([googleFont("Outfit"), googleFont("Noto Sans")]);
-  const fonts: Font[] = [{ name: "Outfit", data: outfit ?? systemFont(), weight: 600, style: "normal" }];
-  if (noto) fonts.push({ name: "Noto Sans", data: noto, weight: 600, style: "normal" });
-  return fonts;
+async function getFont(family: string): Promise<Font> {
+  return { name: family, data: (await googleFont(family)) ?? systemFont(), weight: 600, style: "normal" };
 }
 
 export async function GET({ props }: APIContext) {
   const { post } = props as { post: Post };
+  const family = localeOf(post) === "ru" ? "Open Sans" : "Outfit";
   const meta = `${formatDate(post.data.date, "long")}  ·  ${readingTime(post.body ?? "")}`;
 
   const markup = html`
     <div
-      style="display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;width:1200px;height:630px;padding:72px 80px;background:#0a0a0a;color:#ededed;font-family:'Outfit', 'Noto Sans'"
+      style="display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;width:1200px;height:630px;padding:72px 80px;background:#0a0a0a;color:#ededed;font-family:'${family}'"
     >
       <div style="display:flex;justify-content:space-between;font-size:22px;color:#9a9a9a">
         <span>Uchkun Rakhimov</span>
@@ -83,7 +81,7 @@ export async function GET({ props }: APIContext) {
   const svg = await satori(markup, {
     width: 1200,
     height: 630,
-    fonts: await getFonts(),
+    fonts: [await getFont(family)],
   });
 
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
