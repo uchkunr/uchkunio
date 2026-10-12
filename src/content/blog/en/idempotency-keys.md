@@ -1,5 +1,5 @@
 ---
-title: "Idempotency keys: not charging a payment twice on retry"
+title: "Idempotency keys: avoiding a double charge on retry"
 date: "2026-09-29"
 excerpt: "If the network loses the response, the client sends the request again and the money is charged twice. With an idempotency key, five retries arriving at the same time turn into a single payment."
 tags:

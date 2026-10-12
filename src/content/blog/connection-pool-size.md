@@ -50,7 +50,7 @@ O'tkazuvchanlik oshmadi, kechikish esa 11 barobar o'sdi. Qo'shimcha ulanishlar i
 
 PostgreSQL wiki'dagi boshlang'ich formula: `yadrolar × 2 + disklar`. 2 yadroli serverda bu 5 atrofida. Keyin o'lchov hal qiladi: TPS o'sishdan to'xtagan nuqtadan keyingi har bir ulanish faqat kechikish qo'shadi.
 
-Bu son butun baza uchun, servis nusxalari soniga bo'linmaydi. 10 ta pod har birida `max: 20` bilan bazaga 200 ta ulanish ochadi. Bunday holatda servis va baza o'rtasiga PgBouncer qo'yiladi: ilovalar minglab ulanish ochishi mumkin, bazaga esa transaction rejimida o'nlab ulanish boradi.
+Bu son har bir servis nusxasi uchun emas, butun baza uchun. 10 ta pod har birida `max: 20` bilan bazaga 200 ta ulanish ochadi. Bunday holatda servis va baza o'rtasiga PgBouncer qo'yiladi: ilovalar minglab ulanish ochishi mumkin, bazaga esa transaction rejimida o'nlab ulanish boradi.
 
 ```ini
 [pgbouncer]

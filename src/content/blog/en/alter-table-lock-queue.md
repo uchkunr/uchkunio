@@ -72,6 +72,6 @@ done
 ## Migration rules
 
 - Every migration starts with `SET lock_timeout`. The same holds for ORM migrations: putting it on the first line of the SQL file is enough.
-- Long transactions are found before the migration runs: `SELECT pid, now() - xact_start AS age, query FROM pg_stat_activity WHERE xact_start < now() - interval '1 minute';`
+- Long-running transactions are identified before the migration starts: `SELECT pid, now() - xact_start AS age, query FROM pg_stat_activity WHERE xact_start < now() - interval '1 minute';`
 - Changes that rewrite the table are not instant: `ALTER COLUMN ... TYPE`, or a column with a VOLATILE default such as `gen_random_uuid()`. These are done by adding a new column and copying the data over in batches.
 - Indexes are built with `CREATE INDEX CONCURRENTLY`, which does not block writes to the table.
