@@ -1,5 +1,5 @@
 ---
-title: "Bitta versiya raqami uchun 15 megabayt"
+title: "npm paketlarini tekshirishni 3 barobar tezlashtirish"
 date: "2026-07-01"
 excerpt: "npm-check-updates har bir paket uchun uning butun tarixini yuklab oladi. Buni kichik so'rov bilan almashtirish oson, biroq o'lchovlar asosiy muammo boshqa joyda ekanini ko'rsatdi."
 tags:

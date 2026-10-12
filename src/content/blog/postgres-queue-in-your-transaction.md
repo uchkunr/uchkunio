@@ -1,5 +1,5 @@
 ---
-title: "Ma'lumot va xabar bitta tranzaksiyada"
+title: "Postgres'da navbat: xabarni ma'lumot bilan bitta tranzaksiyada yuborish"
 date: "2026-10-12"
 excerpt: "Bazaga yozilgan qator va u haqidagi xabar alohida tizimlarda saqlansa, ular bir-biridan ajralib qolishi mumkin. PGMQ bilan ikkalasi bitta tranzaksiyaga sig'adi, pgmq-ts esa shu imkoniyatni saqlab qolish uchun yozildi."
 tags:
