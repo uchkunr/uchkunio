@@ -104,7 +104,7 @@ tx B: id 8 oldi, commit qildi
 relay: id > 6  ->  8        kursor = 8
 tx A: commit qildi
 relay: id > 8  ->  (bo'sh)
-jadvalda yuborilmagan: 7, 8
+hech qachon yuborilmaydi: 7
 ```
 
 7-xabar hech qachon yuborilmaydi va buni hech kim sezmaydi. `published_at IS NULL` sharti bu xatodan xoli: kechikib commit bo'lgan qator keyingi aylanishda baribir topiladi.
