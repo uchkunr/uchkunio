@@ -26,7 +26,8 @@ const {
 } = Astro.props;
 
 const pageTitle = title ? SITE.titleTemplate.replace("%s", title) : SITE.title;
-const canonical = canonicalUrl || new URL(Astro.url.pathname, SITE.url).href;
+// Directory builds report "/blog/x/"; the site's URLs have no trailing slash (trailingSlash: "never").
+const canonical = canonicalUrl || new URL(Astro.url.pathname.replace(/(.)\/$/, "$1"), SITE.url).href;
 const ogImageUrl = new URL(ogImage, SITE.url).href;
 ---
 

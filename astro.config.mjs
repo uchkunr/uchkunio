@@ -6,6 +6,9 @@ import vercel from "@astrojs/vercel";
 
 export default defineConfig({
   site: "https://uchkun.io",
+  // One URL per page: internal links, hreflang, canonical and the sitemap all omit the slash,
+  // and Vercel redirects /path/ to /path.
+  trailingSlash: "never",
   output: "server",
   adapter: vercel(),
   integrations: [sitemap()],
