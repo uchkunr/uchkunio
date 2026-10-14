@@ -47,6 +47,8 @@
 @layer base {
   html {
     @apply font-sans;
+    /* Jost 400 reads thin at body sizes; 500 is the regular weight here. */
+    font-weight: 500;
     -webkit-text-size-adjust: 100%;
     scroll-padding-top: 5rem;
   }
@@ -203,8 +205,9 @@ html[data-vt="theme"]::view-transition-new(root) {
 .theme {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: -0.5rem;
   border-radius: 8px;
   color: var(--fg-2);
   transition:
@@ -520,8 +523,8 @@ html[data-vt="theme"]::view-transition-new(root) {
   z-index: 30;
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3rem;
+  height: 3rem;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--bg);
