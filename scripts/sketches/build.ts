@@ -728,78 +728,118 @@ sketches["event-loop/p99-race"] = () =>
 
 // ringcentral sms --------------------------------------------------------------------------------
 
-sketches["sms/paths"] = () => {
-  const s = new Sketch(880, 400, "Bulk SMS wait in a Postgres queue drained by one Hangfire job per user at 1.6 s per message; direct and first messages go straight to RingCentral and only fall back to the queue on a 429");
-  // Three sources on the left.
-  const sources = [
-    { label: "bulk", sub: "2+ numbers, 202 Accepted", y: 60, fill: FILL.blue, stroke: STROKE.blue },
-    { label: "direct", sub: "1 number, inline", y: 190, fill: FILL.green, stroke: STROKE.green },
-    { label: "first message", sub: "lead assigned, inline", y: 300, fill: FILL.green, stroke: STROKE.green },
-  ];
-  for (const src of sources) {
-    s.rect(30, src.y, 190, 58, { fill: src.fill, stroke: src.stroke });
-    s.text(src.label, 125, src.y + 26, { anchor: "middle", size: 20 });
-    s.text(src.sub, 125, src.y + 48, { anchor: "middle", size: 14, color: MUTED });
-  }
-  // The queue: a Postgres table with the status column.
-  s.rect(300, 40, 230, 100, { fill: FILL.yellow, stroke: INK });
-  s.text("Messages (Postgres)", 415, 68, { anchor: "middle", size: 19 });
-  s.text("SmsStatus = Queued", 415, 94, { anchor: "middle", size: 16 });
-  s.text("FIFO by CreatedAt, per user", 415, 118, { anchor: "middle", size: 14, color: MUTED });
-  // One job per user.
-  s.rect(590, 40, 250, 100, { fill: FILL.violet, stroke: STROKE.violet });
-  s.text("ProcessUserSms(userId)", 715, 68, { anchor: "middle", size: 18 });
-  s.text("200 per slice, 1 sender per user", 715, 94, { anchor: "middle", size: 14, color: MUTED });
-  s.text("sms queue: 5 workers", 715, 118, { anchor: "middle", size: 14, color: MUTED });
-  // RingCentral on the right.
-  s.rect(590, 230, 250, 70, { fill: FILL.gray });
-  s.text("RingCentral", 715, 258, { anchor: "middle", size: 20 });
-  s.text("40 req / user / min", 715, 284, { anchor: "middle", size: 15, color: MUTED });
-  // Flows.
-  s.arrow(220, 89, 300, 89, { stroke: STROKE.blue });
-  s.arrow(530, 89, 590, 89, { stroke: STROKE.blue });
-  s.arrow(715, 140, 715, 230, { stroke: STROKE.blue });
-  s.text("1.6 s apart", 760, 190, { size: 15, color: STROKE.blue });
-  s.arrow(220, 219, 590, 262, { stroke: STROKE.green });
-  s.arrow(220, 329, 590, 282, { stroke: STROKE.green });
-  s.text("skips the queue", 400, 232, { anchor: "middle", size: 15, color: STROKE.green });
-  // The 429 fallback from the direct paths back into the queue.
-  s.arrow(560, 300, 420, 142, { stroke: STROKE.red, dashed: true });
-  s.text("429: back to Queued", 470, 330, { anchor: "middle", size: 15, color: STROKE.red });
-  s.text("Redis: sms:user:{id}:lock and sms:dispatch:{id}, both SET NX EX", 440, 385, { anchor: "middle", size: 14, color: MUTED });
+sketches["sms/architecture"] = () => {
+  const s = new Sketch(900, 430, "Every SMS is a row in Postgres first; an outbox relay turns it into a BullMQ job in the account's own queue, where priority and a one-job-per-1.67 s limiter (36 per minute) decide the order; RingCentral's webhook writes the delivery status back");
+  const box = (x: number, y: number, w: number, h: number, title: string, lines: string[], fill: string, stroke: string) => {
+    s.rect(x, y, w, h, { fill, stroke });
+    s.text(title, x + w / 2, y + 30, { anchor: "middle", size: 20 });
+    lines.forEach((line, i) => s.text(line, x + w / 2, y + 56 + i * 22, { anchor: "middle", size: 15, color: MUTED }));
+  };
+  // Top row: where a message is born and where it lives.
+  box(30, 40, 230, 120, "HTTP / lead event", ["one Postgres transaction:", "business write + messages row"], FILL.gray, INK);
+  box(330, 40, 240, 120, "messages (Postgres)", ["source of truth", "queued / sending / sent / failed", "idempotency_key unique"], FILL.yellow, INK);
+  s.arrow(260, 100, 330, 100);
+  // Relay down into the queue.
+  s.arrow(450, 160, 450, 215);
+  s.text("outbox relay, jobId = message.id", 470, 195, { size: 15, color: MUTED });
+  // Queue row.
+  box(300, 215, 300, 150, "BullMQ  sms-{accountId}", ["one queue per RingCentral account", "priority: direct 1, first 2, bulk 3", "limiter 1 / 1.67 s (36 per min), concurrency 1", "429: rateLimit(Retry-After)"], FILL.violet, STROKE.violet);
+  s.arrow(600, 290, 670, 290);
+  box(670, 240, 200, 100, "RingCentral", ["40 req / account / min", "POST /sms"], FILL.blue, STROKE.blue);
+  // Webhook back to the table.
+  s.line(770, 240, 770, 100);
+  s.arrow(770, 100, 570, 100, { stroke: STROKE.green });
+  s.text("webhook: delivered / failed", 672, 86, { anchor: "middle", size: 15, color: STROKE.green });
+  // Reconciler at the bottom.
+  s.text("reconciler cron: queued rows without a live job are re-added, so a lost Redis never loses a message", 450, 410, { anchor: "middle", size: 15, color: MUTED });
   return s.toSVG();
 };
 
-sketches["sms/pacing"] = () => {
-  const s = new Sketch(860, 290, "One SMS every 1.6 s is 37.5 per minute under RingCentral's 40; when X-Rate-Limit-Remaining drops to 2 the worker waits out the window before sending again");
-  s.text("one user's sender job, time runs left to right, slowed down 4x", 30, 36, { size: 17, color: MUTED });
-  const x0 = 60;
-  const perSecond = 30; // px per real second: 24 s fit in 720 px
-  const cycle = 6; // animation seconds; real time shown is 24 s
-  const sends: number[] = [];
-  for (let t = 0; t < 9.6; t += 1.6) sends.push(t);
-  const pauseFrom = 11.2;
-  const pauseTo = 21;
-  for (let t = pauseTo + 0.8; t < 24; t += 1.6) sends.push(t);
-  s.line(x0, 150, x0 + 24 * perSecond, 150, { stroke: MUTED, strokeWidth: 1 });
+sketches["sms/priority"] = () => {
+  const s = new Sketch(880, 300, "5000 bulk jobs wait in the account's queue; a direct job with priority 1 is taken next, and the limiter lets one job through every 1.67 s so RingCentral never sees a 429");
+  const cycle = 5;
+  s.text("queue sms-{accountId}, one account", 30, 36, { size: 17, color: MUTED });
+  // The waiting bulk jobs, drawn right to left so the head of the queue is next to the gate.
+  const headX = 470;
+  for (let i = 1; i <= 6; i++) {
+    const x = headX - 60 - i * 62;
+    s.rect(x, 110, 52, 52, { fill: FILL.blue, stroke: STROKE.blue, roughness: 0.8 });
+    s.text("bulk", x + 26, 132, { anchor: "middle", size: 15 });
+    s.text("p3", x + 26, 152, { anchor: "middle", size: 14, color: MUTED });
+  }
+  s.text("... 5000 of them", 30, 200, { size: 15, color: MUTED });
+  // The direct job appears above the queue and drops into the head position.
+  s.group('class="direct"', (g) => {
+    g.rect(headX - 60, 110, 52, 52, { fill: FILL.green, stroke: STROKE.green });
+    g.text("direct", headX - 34, 132, { anchor: "middle", size: 15 });
+    g.text("p1", headX - 34, 152, { anchor: "middle", size: 14, color: MUTED });
+  });
+  s.group('class="direct-note"', (g) => {
+    g.text("priority 1: taken before every bulk job", headX - 8, 92, { anchor: "end", size: 15, color: STROKE.green });
+  });
+  // The gate.
+  s.rect(headX + 20, 85, 150, 100, { fill: FILL.yellow, stroke: INK });
+  s.text("limiter", headX + 95, 118, { anchor: "middle", size: 19 });
+  s.text("1 / 1.67 s", headX + 95, 143, { anchor: "middle", size: 17 });
+  s.text("36 per minute", headX + 95, 168, { anchor: "middle", size: 14, color: MUTED });
+  s.arrow(headX - 6, 136, headX + 20, 136);
+  // RingCentral.
+  s.rect(headX + 240, 95, 160, 80, { fill: FILL.gray });
+  s.text("RingCentral", headX + 320, 128, { anchor: "middle", size: 19 });
+  s.text("40 / min", headX + 320, 152, { anchor: "middle", size: 15, color: MUTED });
+  s.arrow(headX + 170, 136, headX + 240, 136);
+  // The direct job travelling through the gate to RingCentral.
+  s.group('class="direct-sent"', (g) => {
+    g.rect(headX + 174, 110, 52, 52, { fill: FILL.green, stroke: STROKE.green });
+    g.text("direct", headX + 200, 132, { anchor: "middle", size: 15 });
+  });
+  s.text("bulk keeps flowing at 36 / min; a direct job only takes the next slot, it never adds a request", 440, 262, { anchor: "middle", size: 15, color: MUTED });
+  const motion = [during("direct", cycle, 1.2, 3.0), during("direct-note", cycle, 1.2, 4.2), during("direct-sent", cycle, 3.0, 4.2)].join("");
+  return s.toSVG(motion, ".direct-sent { opacity: 0; }");
+};
+
+sketches["sms/first-minute"] = () => {
+  const s = new Sketch(900, 330, "The first minute with 5000 bulk and 5 direct at 58 s: the old sender fires bulk every 1.6 s and the direct burst pushes the account past 40, two direct SMS get a 429; the queue sends everything in 1.67 s slots, direct takes the next slots, zero 429");
+  s.text("one account, 5000 bulk from 0 s, 5 direct at 58 s (drawn spread out), sped up 10x", 30, 36, { size: 17, color: MUTED });
+  const x0 = 110;
+  const px = 10.6; // px per real second, 70 s fit in 740 px
+  const cycle = 6.6;
   const motion: string[] = [];
-  sends.forEach((t, i) => {
-    const x = x0 + t * perSecond;
-    s.group(`class="s${i}"`, (g) => {
-      g.rect(x - 10, 98, 20, 52, { fill: FILL.green, stroke: STROKE.green });
-    });
-    motion.push(during(`s${i}`, cycle, t / 4, cycle));
-  });
-  s.group('class="pause"', (g) => {
-    g.rect(x0 + pauseFrom * perSecond, 98, (pauseTo - pauseFrom) * perSecond, 52, { fill: FILL.red, stroke: STROKE.red, dashed: true });
-    g.text("Remaining = 2: wait Window + 2 s", x0 + ((pauseFrom + pauseTo) / 2) * perSecond, 84, { anchor: "middle", size: 15, color: STROKE.red });
-  });
-  motion.push(during("pause", cycle, pauseFrom / 4, cycle));
-  s.text("1.6 s", x0 + 0.8 * perSecond, 180, { anchor: "middle", size: 15, color: MUTED });
-  s.line(x0, 160, x0 + 1.6 * perSecond, 160, { stroke: MUTED, strokeWidth: 1 });
-  s.text("37.5 / min, under the 40 / min limit", x0, 225, { size: 17, color: STROKE.green });
-  s.text("429 is never retried inline: the job reschedules itself once", x0, 258, { size: 15, color: MUTED });
-  return s.toSVG(motion.join(""), ".pause { opacity: 1; }");
+  let n = 0;
+  const tick = (t: number, y: number, fill: string, stroke: string, h = 30) => {
+    const cls = `t${n++}`;
+    s.group(`class="${cls}"`, (g) => g.rect(x0 + t * px - 3, y - h, 6, h, { fill, stroke, roughness: 0.5, fillStyle: "solid" }));
+    motion.push(during(cls, cycle, t / 10, cycle));
+  };
+  const lanes = [
+    { label: "old: 1.6 s sleep, direct inline", y: 130 },
+    { label: "queue: 1 job / 1.67 s, priority", y: 240 },
+  ];
+  for (const lane of lanes) {
+    s.text(lane.label, 30, lane.y - 48, { size: 16 });
+    s.line(x0, lane.y, x0 + 70 * px, lane.y, { stroke: MUTED, strokeWidth: 1 });
+  }
+  // Old: 37 bulk ticks, then 5 direct at 58 s (3 ok, 2 x 429), bulk 429 at 59.3 s.
+  for (let i = 0; i < 37; i++) tick(i * 1.6, 130, FILL.blue, STROKE.blue);
+  [0, 1, 2].forEach((d) => tick(58 + d, 130, FILL.green, STROKE.green, 40));
+  [3, 4].forEach((d) => tick(58 + d, 130, FILL.red, STROKE.red, 40));
+  tick(63.5, 130, FILL.red, STROKE.red);
+  s.group('class="old-note"', (g) => g.text("42 calls in one window: 2 direct and 1 bulk get 429", x0 + 70 * px, 72, { anchor: "end", size: 15, color: STROKE.red }));
+  motion.push(during("old-note", cycle, 5.95, cycle));
+  // Queue: 36 slots of 1.667 s, direct takes slots from 58.9 s on.
+  for (let i = 0; i < 35; i++) tick(i * 1.667, 240, FILL.blue, STROKE.blue);
+  [58.9, 60.5, 62.2, 63.9, 65.6].forEach((t) => tick(t, 240, FILL.green, STROKE.green, 40));
+  s.group('class="new-note"', (g) => g.text("direct d1 after 507 ms, then one per slot, 429: 0", x0 + 70 * px, 182, { anchor: "end", size: 15, color: STROKE.green }));
+  motion.push(during("new-note", cycle, 5.9, cycle));
+  // Axis and legend.
+  [0, 20, 40, 58].forEach((t) => s.text(`${t} s`, x0 + t * px, 275, { anchor: "middle", size: 14, color: MUTED }));
+  s.rect(30, 296, 14, 14, { fill: FILL.blue, stroke: STROKE.blue, fillStyle: "solid" });
+  s.text("bulk", 52, 308, { size: 14, color: MUTED });
+  s.rect(110, 296, 14, 14, { fill: FILL.green, stroke: STROKE.green, fillStyle: "solid" });
+  s.text("direct", 132, 308, { size: 14, color: MUTED });
+  s.rect(200, 296, 14, 14, { fill: FILL.red, stroke: STROKE.red, fillStyle: "solid" });
+  s.text("429", 222, 308, { size: 14, color: MUTED });
+  return s.toSVG(motion.join(""), "");
 };
 
 // Write everything registered above. Keep this at the end of the file.
