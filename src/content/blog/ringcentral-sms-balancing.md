@@ -1,7 +1,7 @@
 ---
 title: "RingCentral orqali SMS: BullMQ bilan 429 yo'q, direct xabar 5000 ta bulk oldidan 0.5 soniyada ketadi"
 date: "2026-10-14"
-excerpt: "Bulk kampaniya 1.6 soniya oraliq bilan, direct xabar esa navbatni chetlab yuborilganda 5 ta direct'dan 2 tasi 429 olib, 4963 ta bulk qatori orqasiga tushdi. Har akkauntga bitta BullMQ navbati, priority va 1.67 soniyada bitta so'rov limiter'i bilan 429 nolga tushdi, direct xabar 0.5 soniyada ketdi va 5005 job'dan birortasi yo'qolmadi."
+excerpt: "Bulk 1.6 soniya oraliq bilan, direct esa navbatsiz yuborilganda 5 ta direct'dan 2 tasi 429 oldi va 4963 ta bulk orqasida qoldi. Har akkauntga bitta BullMQ navbati, priority va 1.67 soniyada bitta so'rov limiter'i: 429 nol, direct 0.5 soniyada ketdi, 5005 job'dan birortasi yo'qolmadi."
 tags:
   - architecture
   - reliability
@@ -9,13 +9,19 @@ tags:
   - nestjs
 ---
 
-RingCentral har bir akkaunt uchun daqiqasiga 40 ta so'rovga ruxsat beradi (Medium guruh), limitdan oshsa 429 qaytaradi, 429 takrorlansa akkauntni vaqtincha bloklashi mumkin. Carlink (avtomobil tashish CRM'i) da har dispatcher o'z akkaunti orqali SMS yuboradi va uch xil yuborish bor: bulk (bir bosishda minglab lead'ga), direct (chatdan bitta raqamga) va lead biriktirilganda avtomatik birinchi xabar. Uchta talab: 429 umuman bo'lmasin, birorta xabar yo'qolmasin, bulk direct'ni to'sib qo'ymasin.
+RingCentral limiti: har akkauntga daqiqasiga 40 ta so'rov. Oshsa 429, 429 takrorlansa akkaunt vaqtincha bloklanadi. Bizda uch xil SMS bor:
 
-## Birinchi versiya nega yetarli emas
+- **bulk**: bitta so'rovda minglab lead'ga, 5000 ta oddiy holat
+- **direct**: operator chatdan bitta raqamga yuboradi
+- **first message**: lead biriktirilganda avtomatik ketadi
 
-Birinchi versiyada bulk xabarlar Postgres'dagi `messages` jadvalida `Queued` holatida turardi, har foydalanuvchining Hangfire job'i ularni 1.6 soniya oraliq bilan yuborardi (daqiqasiga 37.5 ta), direct va birinchi xabar esa navbatni chetlab RingCentral'ga to'g'ri ketardi, 429 bo'lsa `Queued` ga tushardi. Mantiq oddiy ko'rinadi: shoshilinch xabar navbatda kutmaydi. Muammo shundaki, limit bitta joyda emas. Bulk worker 37.5 ta so'rovni o'zi sarflaydi, direct esa shu akkauntning qolgan zaxirasidan bexabar yuboriladi.
+Talab: 429 bo'lmasin, xabar yo'qolmasin, direct va first message bulk orqasida kutmasin.
 
-Stend: fake RingCentral 60 soniyalik oynada 40 ta so'rovni sanaydi va 41-chisidan 429 qaytaradi. Bitta akkaunt, 5000 ta bulk, 58-soniyada 5 ta direct:
+## Muammo
+
+Birinchi versiyada bulk xabarlar `messages` jadvalida `queued` holatida turardi, worker ularni 1.6 soniya oraliq bilan yuborardi (daqiqasiga 37.5 ta). Direct va first message navbatga kirmasdi: to'g'ridan-to'g'ri RingCentral'ga ketardi, 429 bo'lsa `queued` ga tushardi.
+
+Limit ikki joyda sarflanadi. Worker 37.5 tasini oladi, direct esa qolganini hisoblamaydi. Stend: fake RingCentral 60 soniyalik oynada 40 ta so'rovni sanaydi, 41-chisidan 429. Bitta akkaunt, 5000 ta bulk, 58-soniyada 5 ta direct:
 
 ```text
  58.0 s  direct #1 sent
@@ -27,27 +33,33 @@ Stend: fake RingCentral 60 soniyalik oynada 40 ta so'rovni sanaydi va 41-chisida
 first minute: bulk sent 37, 429 total 3 (direct, direct, bulk)
 ```
 
-Ikki direct xabar 429 oldi, `Queued` ga tushdi va navbat FIFO bo'lgani uchun 4963 ta bulk qatorining orqasida qoldi. "Shoshilinch" xabar tizimdagi eng sekin xabarga aylandi, RingCentral esa bir daqiqada uchta 429 ko'rdi.
+Ikkita direct 429 oldi va `queued` ga tushdi. Navbat FIFO, shuning uchun ular 4963 ta bulk orqasida qoldi. RingCentral bir daqiqada uchta 429 ko'rdi.
 
-## Yechim: bitta darvoza, navbat ichida priority
+## Yechim
 
-Qoida bitta: RingCentral'ga ketadigan har bir so'rov akkauntning bitta navbatidan o'tadi va shu navbatda limit ham, priority ham hal qilinadi. Shoshilinch xabar navbatni chetlab o'tmaydi, u navbatning boshiga turadi.
+Bitta akkauntning hamma SMS'i bitta BullMQ navbatidan o'tadi: `sms-{accountId}`. Navbatda uchta sozlama:
 
-![Har SMS avval Postgres'da qator, outbox relay uni akkauntning BullMQ navbatiga job qilib qo'shadi, navbatda priority va limiter tartibni belgilaydi, RingCentral webhook'i yetkazilganlik holatini jadvalga qaytaradi, reconciler cron esa job'i yo'qolgan qatorlarni qayta qo'shadi](/sketches/sms/architecture.svg)
+- `priority`: direct 1, first message 2, bulk 3. Kichik raqam oldin olinadi.
+- `limiter: { max: 1, duration: 1667 }`: 1.667 soniyada bitta job, daqiqasiga 36. 40 dan 10% past.
+- `concurrency: 1`.
 
-Texnologiyalar: NestJS, `@nestjs/bullmq` va BullMQ 6 (Redis 7 ustida), Postgres (`messages` jadvali, outbox), `@nestjs/schedule` (reconciler), RingCentral webhook (yetkazilganlik). Har qismning vazifasi:
+Direct navbatni chetlab o'tmaydi, navbatning boshiga qo'yiladi. Limit bitta joyda hisoblanadi.
+
+![Har SMS avval Postgres'da qator, relay uni akkauntning BullMQ navbatiga job qilib qo'shadi, navbatda priority va limiter tartibni belgilaydi, RingCentral webhook'i yetkazilganlik holatini jadvalga qaytaradi, reconciler cron esa job'i yo'qolgan qatorlarni qayta qo'shadi](/sketches/sms/architecture.svg)
+
+Stack: NestJS, BullMQ 6 (Redis 7), Postgres (`messages` jadvali), `@nestjs/schedule` (reconciler), RingCentral webhook.
 
 | Qism | Vazifa |
 | --- | --- |
-| `messages` (Postgres) | Haqiqat manbai. Qator biznes yozuv bilan bitta transaction'da yoziladi, `idempotency_key` unique |
-| BullMQ navbati `sms-{accountId}` | Har RingCentral akkauntiga bittadan. `priority`: direct 1, birinchi xabar 2, bulk 3. `limiter`: 1.667 s da bitta job (daqiqasiga 36, 40 dan 10% past). `concurrency: 1` |
-| Processor | RingCentral'ni chaqiradi. 429 bo'lsa `Retry-After` muddatiga navbatni to'xtatadi, job urinish sarflamaydi |
-| Reconciler cron | `queued` holatida turgan, jonli job'i yo'q qatorlarni qayta qo'shadi. Redis o'chsa ham xabar yo'qolmaydi |
-| Webhook | `delivered` va `failed` holatlarini `messages` ga yozadi. "Sent" RingCentral qabul qildi degani, yetkazildi degani emas |
+| `messages` (Postgres) | Asosiy manba. Qator biznes yozuv bilan bitta transaction'da yoziladi, `idempotency_key` unique |
+| `sms-{accountId}` (BullMQ) | Har akkauntga bittadan. priority, limiter, concurrency 1 |
+| Processor | RingCentral'ni chaqiradi. 429: navbat `Retry-After` muddatiga to'xtaydi, job attempt sarflamaydi |
+| Reconciler cron | `queued` holatida turgan, job'i yo'q qatorlarni qayta qo'shadi |
+| Webhook | `delivered` va `failed` ni `messages` ga yozadi. `sent` RingCentral qabul qildi degani, yetkazildi emas |
 
 ## Kod
 
-Xabar avval jadvalga tushadi, navbatga emas. Shunda HTTP so'rov va lead event uchun bitta yo'l bor va dublikatlar bazada to'xtaydi:
+Xabar avval jadvalga yoziladi. Dublikat `idempotency_key` da to'xtaydi:
 
 ```ts
 // messages.repository.ts
@@ -71,9 +83,9 @@ export class MessagesRepository {
 }
 ```
 
-Kalit yo'lga qarab tuziladi: `bulk:{campaignId}:{leadId}`, `direct:{accountId}:{clientRequestId}`, `first:{leadId}`. Bu [idempotency key](/blog/idempotency-keys) postidagi naqsh, faqat API javobi emas, xabar qatori saqlanadi.
+Kalitlar: `bulk:{campaignId}:{leadId}`, `direct:{accountId}:{clientRequestId}`, `first:{leadId}`. Naqsh [idempotency key](/blog/idempotency-keys) postidagi bilan bir xil.
 
-Har akkaunt uchun navbat va worker bitta jarayonda, registry orqali yaratiladi. BullMQ 6 da navbat nomida `:` bo'lmaydi, shuning uchun `sms-{accountId}`:
+Har akkaunt uchun Queue va Worker registry'da yaratiladi. BullMQ 6 da navbat nomida `:` bo'lmaydi:
 
 ```ts
 // sms-queues.ts
@@ -112,7 +124,7 @@ export class SmsQueues implements OnModuleDestroy {
 }
 ```
 
-Navbatga qo'shish ikki xil: bitta xabar va butun kampaniya. Ikkalasida ham `jobId` xabarning id'si, shuning uchun bir xabar ikki marta qo'shilsa BullMQ ikkinchisini tashlab yuboradi:
+Navbatga qo'shish. `jobId` xabar id'si, bir xabar ikki marta qo'shilsa ikkinchisi tashlab yuboriladi:
 
 ```ts
 // sms-enqueue.service.ts
@@ -144,9 +156,9 @@ export class SmsEnqueueService {
 }
 ```
 
-![5000 ta bulk job akkauntning navbatida turibdi, priority 1 bilan kelgan direct job keyingi bo'lib olinadi, limiter esa har 1.67 soniyada bitta job o'tkazadi, shuning uchun RingCentral 429 ko'rmaydi](/sketches/sms/priority.svg)
+![5000 ta bulk job akkauntning navbatida turibdi, priority 1 bilan kelgan direct job keyingi bo'lib olinadi, limiter har 1.67 soniyada bitta job o'tkazadi, RingCentral 429 ko'rmaydi](/sketches/sms/priority.svg)
 
-Processor uch xil xatoni uch xil ko'radi. 429 eng muhimi: job yiqilmaydi, urinish sarflanmaydi, butun navbat `Retry-After` muddatiga to'xtaydi:
+Processor. 429 da job yiqilmaydi, attempt sarflanmaydi, navbat `Retry-After` muddatiga to'xtaydi:
 
 ```ts
 // sms.processor.ts
@@ -183,7 +195,7 @@ export class SmsProcessor {
 }
 ```
 
-Reconciler navbatning sug'urtasi. Redis o'chib ketgan, job qo'shishdan oldin jarayon o'lgan, `removeOnFail` bilan kimdir qo'lda tozalagan: hammasida Postgres'dagi qator qoladi va cron uni ko'radi:
+Reconciler. Redis o'chsa, job qo'shilguncha jarayon o'lsa yoki kimdir failed set'ni tozalasa, qator Postgres'da qoladi va cron uni qayta qo'shadi:
 
 ```ts
 // sms-reconciler.ts
@@ -205,7 +217,7 @@ export class SmsReconciler {
 }
 ```
 
-Webhook `messages` ga oxirgi so'zni aytadi. RingCentral subscription yaratilganda `Validation-Token` header'ini qaytarishni talab qiladi, keyin har xabar holati uchun event yuboradi:
+Webhook. Subscription yaratilganda RingCentral `Validation-Token` header'ini qaytarishni kutadi, keyin har xabar holati uchun event yuboradi:
 
 ```ts
 // ringcentral-webhook.controller.ts
@@ -229,7 +241,7 @@ export class RingCentralWebhookController {
 
 ## O'lchov
 
-Xuddi shu stend, xuddi shu yuk: 5000 ta bulk, 58-soniyada 5 ta direct. BullMQ `limiter: { max: 1, duration: 1667 }`, priority direct 1, bulk 3:
+Xuddi shu stend, xuddi shu yuk: 5000 ta bulk, 58-soniyada 5 ta direct:
 
 ```text
   0.4 s  5000 bulk jobs added
@@ -243,11 +255,11 @@ sent 42 (bulk 37, direct 5), 429 total 0, queue pauses 0
 job counts: {"waiting":0,"prioritized":4963,"completed":42,"failed":0}
 ```
 
-429 nol. Birinchi direct 507 ms da ketdi (keyingi bo'sh slot), qolganlari har 1.67 soniyada bittadan: navbatda 4963 ta bulk turgan bo'lsa ham direct job'lar ketma-ket beshta slotni oldi. Job'lar hisobi 42 + 4963 = 5005: 5000 bulk, 5 direct, va stendda ataylab ikki marta qo'shilgan bitta xabar qo'shimcha job yaratmadi.
+429 nol. Birinchi direct 507 ms da ketdi, qolganlari har 1.67 soniyada bittadan. 42 + 4963 = 5005: 5000 bulk, 5 direct. Stendda bitta xabar ataylab ikki marta qo'shilgan, qo'shimcha job yaratmagan.
 
-![Birinchi daqiqa: eski yondashuvda bulk har 1.6 soniyada ketadi va 58-soniyadagi 5 ta direct 40 limitdan oshirib yuboradi, ikkitasi 429 oladi; yangi yondashuvda hamma so'rov 1.67 soniyalik slotlarda ketadi, direct keyingi slotlarni oladi va 429 bo'lmaydi](/sketches/sms/first-minute.svg)
+![Birinchi daqiqa: eski versiyada bulk har 1.6 soniyada ketadi, 58-soniyadagi 5 ta direct 40 limitdan oshiradi, ikkitasi 429 oladi; yangisida hamma so'rov 1.67 soniyalik slotlarda ketadi, direct keyingi slotlarni oladi, 429 yo'q](/sketches/sms/first-minute.svg)
 
-Ikkinchi sinov: provayder limitni ogohlantirmasdan 30 ga tushirgan deylik, ya'ni limiter'imiz 36 bilan baribir 429 keladi:
+Ikkinchi sinov: provayder limitni 30 ga tushirgan, limiter'imiz hali 36:
 
 ```text
  50.2 s  429 from RingCentral: queue paused for 10 s, job b30 kept
@@ -259,11 +271,11 @@ sent 36 (bulk 31, direct 5), 429 total 1, queue pauses 1
 job counts: {"waiting":0,"prioritized":4969,"completed":36,"failed":0}
 ```
 
-Bitta 429, navbat `Retry-After` ga ko'ra 10 soniya to'xtadi, job yiqilmadi, pauza tugagach direct'lar birinchi bo'lib ketdi. Bu yerda halol bo'lish kerak: pauza butun akkauntni to'xtatadi, direct ham 2.2 soniya kutdi. Bu to'g'ri xulq, chunki pauza paytida yuborilgan har so'rov yana 429 bo'lardi va blok yaqinlashardi.
+Bitta 429, navbat 10 soniya to'xtadi, `failed` nol. Pauza paytida direct ham kutdi (2.2 soniya). Bu to'g'ri: pauza paytida yuborilgan so'rov yana 429 bo'ladi.
 
 ## Testlar
 
-Ikki narsa tarmoqsiz tekshiriladi: priority tartibi va 429 dan keyin job yo'qolmasligi. Redis haqiqiy (lokal yoki Testcontainers), RingCentral fake, limiter testda 50 ms ga tushiriladi, shunda test soniyalarda emas, millisoniyalarda o'tadi:
+Redis haqiqiy, RingCentral fake, limiter testda 50 ms. Ikki narsa tekshiriladi: priority tartibi va 429 dan keyin job yo'qolmasligi:
 
 ```ts
 // sms.e2e.spec.ts
@@ -296,16 +308,19 @@ it("a 429 pauses the queue and loses nothing", async () => {
 });
 ```
 
-Uchinchi test reconciler uchun: `queued` qator yoziladi, job ataylab qo'shilmaydi, cron bir marta chaqiriladi va job paydo bo'lishi tekshiriladi. To'rtinchisi webhook: `Validation-Token` bilan kelgan so'rov shu header bilan 200 qaytaradi, `Delivered` event esa qatorni `delivered` qiladi.
+Reconciler testi: `queued` qator yoziladi, job qo'shilmaydi, cron chaqiriladi, job paydo bo'lishi tekshiriladi. Webhook testi: `Validation-Token` bilan kelgan so'rov shu header bilan 200 qaytaradi, `Delivered` event qatorni `delivered` qiladi.
 
 ## Chegaralar
 
-BullMQ limiter'i akkauntning navbatini boshqaradi, boshqa hech narsani: shu akkauntning Medium guruhidan foydalanadigan har qanday boshqa chaqiruv (masalan, raqamlar ro'yxati) ham shu navbat orqali o'tishi kerak, aks holda limit yana ikki joyga bo'linadi. Har akkauntga bitta Worker bitta bloklovchi Redis ulanish degani: 100 akkaunt, 100 ulanish, bu normal, lekin Redis `maxclients` ni bilib qo'ying. Guruhli navbat (bitta queue, akkaunt bo'yicha group va group limit) BullMQ Pro'da bor, u pullik. Multi-tenancy kelganda navbat nomi `sms-{tenantId}-{accountId}` bo'ladi, limit baribir akkaunt darajasida qoladi, chunki RingCentral shunday sanaydi.
+- Shu akkauntning Medium guruhidan foydalanadigan boshqa chaqiruvlar (masalan, raqamlar ro'yxati) ham shu navbat orqali o'tishi kerak. Aks holda limit yana ikki joyda sarflanadi.
+- Har Worker bitta bloklovchi Redis ulanish: 100 akkaunt, 100 ulanish. `maxclients` ni tekshiring.
+- BullMQ Pro'da group'lar bor: bitta navbat, akkaunt bo'yicha group va group limit. Pullik.
+- Multi-tenancy: navbat nomi `sms-{tenantId}-{accountId}`, limit akkaunt darajasida qoladi.
 
 ## Qoidalar
 
-1. Provayder limiti bitta darvozada hisoblansin va hamma yo'l shu darvozadan o'tsin. Navbatni chetlab o'tadigan "shoshilinch" yo'l 429 ning manbai.
-2. Priority navbat ichida, limit bilan birga. Shoshilinch xabar navbatdan qochmaydi, navbatning boshiga turadi.
-3. Limiter'ni oyna emas, oraliq sifatida sozlang: `1 / 1667 ms` istalgan 60 soniyada 36 dan oshmaydi, `36 / 60 s` esa oynaning boshida 36 tasini yoppasiga o'tkazadi va provayder oynasi bilan siljisa 429 beradi.
-4. 429 ni retry qilmang, kuting: `Retry-After` muddatiga navbatni to'xtating va job'ni urinish sarflamasdan qaytaring.
-5. Haqiqat manbai Postgres, navbat esa rejalashtiruvchi. Jonli job'i yo'q qatorlarni qaytaradigan reconciler bo'lmasa, Redis o'chgan kuni xabarlar yo'qoladi.
+1. Bitta akkaunt, bitta navbat. bulk, direct, first message, hammasi shu navbatdan.
+2. Priority navbat ichida: direct 1, first message 2, bulk 3.
+3. Limiter `1 / 1667 ms`, `36 / 60 s` emas. Ikkinchisi oynaning boshida 36 tasini yoppasiga o'tkazadi, provayder oynasi bilan siljisa 429 beradi.
+4. 429: `worker.rateLimit(retryAfter)`, `Worker.RateLimitError()`. Retry emas, pauza.
+5. Postgres asosiy manba, BullMQ rejalashtiruvchi. Reconciler job'i yo'q qatorlarni qayta qo'shadi.
