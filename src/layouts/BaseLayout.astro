@@ -252,118 +252,129 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     layer.setAttribute("viewBox", `0 0 ${innerWidth} ${innerHeight}`);
 
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
-    const STEM = 360; // ms to draw one stem
-    // Every click grows a different plant: its own density, reach and leaf size.
-    const density = rand(7, 12);
-    const reach = rand(0.8, 1.25);
-    const leafScale = rand(0.85, 1.2);
+    const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
+    const STEM = 300; // ms to draw one stem
+    // Every click grows a different plant: its own spacing, reach and leaf size.
+    const spacing = rand(9, 13);
+    const reach = rand(0.85, 1.15);
+    const leafScale = rand(0.9, 1.15);
     let last = 0;
 
-    // A leaf: a blade of two bowed sides meeting at the tip, a vein in the page
-    // colour down the middle, unfurling from its base with a small twist.
-    function leaf(g: SVGGElement, x: number, y: number, angle: number, size: number, side: number, at: number) {
-      size *= leafScale;
-      const tipX = x + Math.cos(angle) * size;
-      const tipY = y + Math.sin(angle) * size;
-      const nx = Math.cos(angle + Math.PI / 2) * size * 0.4;
-      const ny = Math.sin(angle + Math.PI / 2) * size * 0.4;
-      const mx = (x + tipX) / 2;
-      const my = (y + tipY) / 2;
-      const el = document.createElementNS(SVG, "g");
-      el.dataset.leaf = "";
-      el.innerHTML =
-        `<path d="M${x} ${y}Q${mx + nx} ${my + ny} ${tipX} ${tipY}Q${mx - nx} ${my - ny} ${x} ${y}Z" fill="currentColor" stroke="currentColor" stroke-width="0.5" stroke-linejoin="round"/>` +
-        `<path d="M${x} ${y}Q${mx + nx * 0.15} ${my + ny * 0.15} ${x + (tipX - x) * 0.82} ${y + (tipY - y) * 0.82}" fill="none" stroke="var(--bg)" stroke-width="0.6" stroke-linecap="round" opacity="0.7"/>`;
-      el.setAttribute("opacity", "0");
-      el.style.transformOrigin = `${x}px ${y}px`;
-      el.animate(
+    const el = (name: string, attrs: Record<string, string | number>) => {
+      const node = document.createElementNS(SVG, name);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+      return node;
+    };
+    // Something that appears at a point: scales up from there with a soft overshoot.
+    const appear = (node: SVGElement, x: number, y: number, at: number, opacity: number, twist = 0) => {
+      node.setAttribute("opacity", "0");
+      node.style.transformOrigin = `${x}px ${y}px`;
+      node.animate(
         [
-          { opacity: 0, transform: `scale(0.1) rotate(${-side * 35}deg)` },
-          { opacity: rand(0.72, 0.92), transform: "scale(1) rotate(0deg)" },
+          { opacity: 0, transform: `scale(0.2) rotate(${twist}deg)` },
+          { opacity, transform: "scale(1) rotate(0deg)" },
         ],
-        { duration: 560, delay: at, easing: "cubic-bezier(0.34, 1.25, 0.64, 1)", fill: "forwards" },
+        { duration: 420, delay: at, easing: "cubic-bezier(0.34, 1.3, 0.64, 1)", fill: "forwards" },
       );
-      g.append(el);
-      last = Math.max(last, at + 560);
+      last = Math.max(last, at + 420);
+    };
+
+    // A leaflet: a teardrop pointing along `angle`, a faint vein down the middle.
+    function leaf(g: SVGGElement, x: number, y: number, angle: number, size: number, at: number) {
+      size *= leafScale;
+      const tx = x + Math.cos(angle) * size;
+      const ty = y + Math.sin(angle) * size;
+      const nx = Math.cos(angle + Math.PI / 2) * size * 0.34;
+      const ny = Math.sin(angle + Math.PI / 2) * size * 0.34;
+      const m1 = 0.38, m2 = 0.5;
+      const node = el("g", { "data-leaf": "" }) as SVGGElement;
+      node.append(
+        el("path", { d: `M${x} ${y}Q${x + (tx - x) * m1 + nx} ${y + (ty - y) * m1 + ny} ${tx} ${ty}Q${x + (tx - x) * m2 - nx} ${y + (ty - y) * m2 - ny} ${x} ${y}Z`, fill: "currentColor" }),
+        el("path", { d: `M${x} ${y}L${x + (tx - x) * 0.7} ${y + (ty - y) * 0.7}`, stroke: "var(--bg)", "stroke-width": 0.5, opacity: 0.6 }),
+      );
+      g.append(node);
+      appear(node, x, y, at, rand(0.78, 0.95), rand(-20, 20));
     }
 
-    // A stem: a short bowed line drawn on from its base, a leaf on the way and one at the tip.
-    function stem(g: SVGGElement, x: number, y: number, angle: number, length: number, at: number, forks: number) {
+    // A twig: a bowed line drawn on from its base. Returns the path for leaf placement.
+    function twig(g: SVGGElement, x: number, y: number, angle: number, length: number, width: number, at: number) {
+      const bow = rand(-0.2, 0.2) * length;
       const x2 = x + Math.cos(angle) * length;
       const y2 = y + Math.sin(angle) * length;
-      const bow = rand(-0.3, 0.3) * length;
       const cx = (x + x2) / 2 + Math.cos(angle + Math.PI / 2) * bow;
       const cy = (y + y2) / 2 + Math.sin(angle + Math.PI / 2) * bow;
-      const el = document.createElementNS(SVG, "path");
-      el.dataset.stem = "";
-      el.setAttribute("d", `M${x} ${y}Q${cx} ${cy} ${x2} ${y2}`);
-      el.setAttribute("fill", "none");
-      el.setAttribute("stroke", "currentColor");
-      el.setAttribute("stroke-linecap", "round");
-      el.setAttribute("stroke-width", forks > 0 ? "1.5" : "1.05");
-      el.setAttribute("opacity", "0.85");
-      g.append(el);
-      const total = el.getTotalLength();
-      el.style.strokeDasharray = `${total}`;
-      el.style.strokeDashoffset = `${total}`;
-      el.animate([{ strokeDashoffset: total }, { strokeDashoffset: 0 }], {
-        duration: STEM,
-        delay: at,
-        easing: "cubic-bezier(0.25, 0.1, 0.25, 1)",
-        fill: "forwards",
-      });
-      const done = at + STEM;
-
-      const side = Math.random() < 0.5 ? 1 : -1;
-      const t = rand(0.45, 0.7);
-      leaf(g, x + (x2 - x) * t, y + (y2 - y) * t, angle + side * rand(0.75, 1.1), rand(8, 13), side, at + STEM * t);
-      leaf(g, x2, y2, angle + rand(-0.3, 0.3), rand(10, 16), -side, done - 90);
-      if (forks > 0) {
-        stem(g, x + (x2 - x) * 0.6, y + (y2 - y) * 0.6, angle - side * rand(0.5, 0.9), length * rand(0.5, 0.7), at + STEM * 0.6, forks - 1);
-      }
+      const path = el("path", { d: `M${x} ${y}Q${cx} ${cy} ${x2} ${y2}`, fill: "none", stroke: "currentColor", "stroke-width": width, "stroke-linecap": "round", opacity: 0.85, "data-stem": "" }) as SVGPathElement;
+      g.append(path);
+      const total = path.getTotalLength();
+      path.style.strokeDasharray = `${total}`;
+      path.style.strokeDashoffset = `${total}`;
+      path.animate([{ strokeDashoffset: total }, { strokeDashoffset: 0 }], { duration: STEM, delay: at, easing: "ease-out", fill: "forwards" });
+      return { path, total, x2, y2 };
     }
 
-    // One sprout: a group rooted at (x, y) so it can sway from its base.
+    // A branch: a main twig that forks once or twice, leaves in pairs along it and
+    // one at every tip, all pointing forward the way leaves grow. Each branch is a
+    // group rooted at its base so it can sway.
     const sprouts: SVGGElement[] = [];
     function sprout(x: number, y: number, angle: number, length: number, at: number) {
-      const g = document.createElementNS(SVG, "g");
+      const g = el("g", {}) as SVGGElement;
       g.style.transformOrigin = `${x}px ${y}px`;
       layer.append(g);
       sprouts.push(g);
-      stem(g, x, y, angle, length, at, Math.random() < 0.6 ? 1 : 0);
+
+      const main = twig(g, x, y, angle, length, 1.1, at);
+      const forks = length > 12 ? 2 : 1;
+      const forkSide = Math.random() < 0.5 ? 1 : -1;
+      for (let i = 0; i < forks; i++) {
+        const t = forks === 1 ? rand(0.45, 0.6) : 0.38 + i * 0.3;
+        const p = main.path.getPointAtLength(main.total * t);
+        const side = i === 0 ? forkSide : -forkSide;
+        const sub = twig(g, p.x, p.y, angle + side * rand(0.55, 0.85), length * rand(0.45, 0.62), 0.8, at + STEM * t);
+        // A leaf at the fork's tip, and one on its outer side half-way.
+        const subAngle = Math.atan2(sub.y2 - p.y, sub.x2 - p.x);
+        leaf(g, sub.x2, sub.y2, subAngle + rand(-0.2, 0.2), rand(4.5, 6), at + STEM * (t + 1));
+        const q = sub.path.getPointAtLength(sub.total * 0.5);
+        leaf(g, q.x, q.y, subAngle + side * rand(0.7, 0.95), rand(3.8, 5), at + STEM * (t + 0.5));
+      }
+      // Leaves in a pair low on the main twig, and one at its tip.
+      const p = main.path.getPointAtLength(main.total * 0.25);
+      leaf(g, p.x, p.y, angle - rand(0.75, 0.95), rand(3.6, 4.6), at + STEM * 0.25);
+      leaf(g, p.x, p.y, angle + rand(0.75, 0.95), rand(3.6, 4.6), at + STEM * 0.25 + 40);
+      leaf(g, main.x2, main.y2, angle + rand(-0.2, 0.2), rand(5, 6.5), at + STEM);
     }
 
-    // Sprouts ring the text: along the top and bottom edges, leaning outward from
-    // the middle, and a few from each end. The ones above stay inside the viewport.
-    const count = Math.min(24, Math.max(6, Math.round(rect.width / density)));
+    // Sprouts ring the text: along the top and bottom, leaning outward from the
+    // middle, and one or two from each end. The ones above stay inside the viewport.
+    const count = Math.min(26, Math.max(6, Math.round(rect.width / spacing)));
     for (let i = 0; i < count; i++) {
       const t = (i + 0.5) / count;
-      const x = rect.left + rect.width * t + rand(-3, 3);
+      const x = rect.left + rect.width * t + rand(-2, 2);
       const up = i % 2 === 0;
-      const y = up ? rect.top + 3 : rect.bottom - 3;
-      const lean = (t - 0.5) * 1.2 + rand(-0.25, 0.25);
+      // Root them in the letters themselves (near the cap line and the baseline), not the line box.
+      const y = up ? rect.top + rect.height * 0.32 : rect.bottom - rect.height * 0.22;
+      const lean = (t - 0.5) * 1.1 + rand(-0.2, 0.2);
       const angle = up ? -Math.PI / 2 + lean : Math.PI / 2 + lean;
-      let length = rand(18, 34) * reach;
-      if (up) length = Math.min(length, Math.max(8, rect.top - 6));
-      sprout(x, y, angle, length, i * 70 + rand(0, 80));
+      let length = rand(9, 16) * reach;
+      if (up) length = Math.min(length, Math.max(7, y - 5));
+      sprout(x, y, angle, length, i * 55 + rand(0, 60));
     }
     for (const side of [-1, 1]) {
       const x = side < 0 ? rect.left + 1 : rect.right - 1;
-      const ends = Math.random() < 0.5 ? 2 : 3;
+      const ends = pick([1, 2, 2]);
       for (let i = 0; i < ends; i++) {
         const y = rect.top + rect.height * ((i + 0.5) / ends);
-        const angle = (side < 0 ? Math.PI : 0) + rand(-0.6, 0.6);
-        sprout(x, y, angle, rand(16, 30) * reach, rand(100, 600));
+        const angle = (side < 0 ? Math.PI : 0) + (ends === 1 ? 0 : (i === 0 ? -0.35 : 0.35)) + rand(-0.15, 0.15);
+        sprout(x, y, angle, rand(9, 14) * reach, rand(150, 500));
       }
     }
     document.body.append(layer);
 
-    // Once grown, a breath of wind: each sprout sways from its base at its own pace.
+    // Once grown, the faintest breeze: each sprout sways from its base at its own pace.
     sprouts.forEach((g) => {
-      const amp = rand(1.2, 2.4);
+      const amp = rand(0.8, 1.6);
       g.animate([{ transform: `rotate(${-amp}deg)` }, { transform: `rotate(${amp}deg)` }], {
-        duration: rand(1800, 2800),
-        delay: rand(0, 600),
+        duration: rand(2000, 3200),
+        delay: rand(0, 800),
         direction: "alternate",
         iterations: Infinity,
         easing: "ease-in-out",
@@ -373,7 +384,7 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     // Hold the finished sprouts for a while, then let them go on their own.
     setTimeout(() => {
       if (!layer.classList.contains("is-fading")) clearTree(layer);
-    }, last + 3000);
+    }, last + 2600);
   }
 
   function clearTree(layer: SVGSVGElement) {
@@ -384,15 +395,15 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       leaf.animate(
         [
           { transform: "translate(0px, 0px) rotate(0deg)", opacity: 0.85 },
-          { transform: `translate(${rand(-10, 10)}px, ${rand(18, 34)}px) rotate(${rand(-50, 50)}deg)`, opacity: 0 },
+          { transform: `translate(${rand(-6, 6)}px, ${rand(10, 18)}px) rotate(${rand(-40, 40)}deg)`, opacity: 0 },
         ],
-        { duration: rand(900, 1300), delay: rand(0, 350), easing: "cubic-bezier(0.4, 0, 0.8, 1)", fill: "forwards", composite: "add" },
+        { duration: rand(900, 1300), delay: rand(0, 400), easing: "cubic-bezier(0.4, 0, 0.8, 1)", fill: "forwards", composite: "add" },
       );
     });
-    layer.querySelectorAll<SVGPathElement>("[data-stem]").forEach((stem) => {
-      stem.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 700, delay: 300, easing: "ease-out", fill: "forwards" });
+    layer.querySelectorAll<SVGPathElement>("[data-stem]").forEach((part) => {
+      part.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 700, delay: 300, easing: "ease-out", fill: "forwards" });
     });
-    setTimeout(() => layer.remove(), 1750);
+    setTimeout(() => layer.remove(), 1800);
   }
 
   /** Lets any standing plant go and grows a fresh one from `from`. */
