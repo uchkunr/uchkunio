@@ -1,131 +1,311 @@
 ---
-title: "SMS через RingCentral: bulk в очереди, прямые сообщения сразу, лимит 40 запросов в минуту"
+title: "SMS через RingCentral: ноль 429 с BullMQ, прямое сообщение уходит за 0.5 с впереди 5000 bulk"
 date: "2026-10-14"
-excerpt: "Когда один пользователь отправляет 5000 SMS, прямые сообщения остальных и первое сообщение лиду не должны застревать в очереди. В Carlink это решают машина состояний в Postgres, отдельный Hangfire job на каждого пользователя и два ключа в Redis."
+excerpt: "Когда bulk-кампания шла с интервалом 1.6 с, а прямое сообщение отправлялось в обход очереди, 2 из 5 прямых получили 429 и встали позади 4963 bulk-строк. Одна очередь BullMQ на аккаунт, приоритет и лимитер «один запрос в 1.67 с» свели 429 к нулю: прямое сообщение ушло за 0.5 с, и ни один из 5005 job'ов не потерялся."
 tags:
   - architecture
   - reliability
   - redis
+  - nestjs
 ---
 
-RingCentral разрешает каждому пользователю 40 запросов в минуту (группа Medium). В Carlink (CRM для перевозки автомобилей) каждый диспетчер отправляет SMS через свой аккаунт RingCentral, и есть три вида отправки: bulk (тысячи лидов одним нажатием), direct (одному номеру из чата) и автоматическое первое сообщение при назначении лида. Требование простое: bulk никогда не должен блокировать два других пути, после 429 ни одно сообщение не должно потеряться и ни одно не должно уйти дважды.
+RingCentral разрешает каждому аккаунту 40 запросов в минуту (группа Medium), при превышении лимита возвращает 429, а при повторяющихся 429 может временно заблокировать аккаунт. В Carlink (CRM для перевозки автомобилей) каждый диспетчер отправляет SMS через свой аккаунт, и есть три вида отправки: bulk (тысячи лидов одним нажатием), direct (одному номеру из чата) и автоматическое первое сообщение при назначении лида. Три требования: 429 не должно быть вовсе, ни одно сообщение не должно потеряться, bulk не должен блокировать direct.
 
-## Три пути, одна таблица
+## Почему первой версии недостаточно
 
-Приоритет в этой системе не является свойством очереди. В очередь попадает только bulk, два других пути идут в RingCentral напрямую:
+В первой версии bulk-сообщения лежали в таблице `messages` в Postgres в статусе `Queued`, Hangfire job каждого пользователя отправлял их с интервалом 1.6 с (37.5 в минуту), а direct и первое сообщение шли в RingCentral напрямую, минуя очередь, и при 429 опускались в `Queued`. Логика выглядит просто: срочное сообщение не ждёт в очереди. Проблема в том, что лимит считается не в одном месте. Bulk-воркер сам расходует 37.5 запросов, а direct уходит, ничего не зная об оставшемся запасе того же аккаунта.
 
-- **Bulk.** Endpoint `SendSMS` смотрит на число номеров: если их больше одного, для каждого лида в таблицу `Messages` записывается строка в статусе `Queued` и возвращается `202 Accepted`. Отправка происходит позже, в фоновом процессе.
-- **Direct.** Если номер один, строка записывается в статусе `Pending`, переводится в `Sending`, и RingCentral вызывается внутри этого же запроса. Пришёл ответ: `Sent`; пришёл 429: строка опускается в `Queued`, и воркер очереди отправит её позже; любая другая ошибка: `Failed`.
-- **Первое сообщение лиду.** Когда лид назначается пользователю, Hangfire job отправляет его тем же путём, что и direct. Если пришёл 429, воркер очереди этого пользователя планируется через `Retry-After` или через 65 секунд (что больше).
-
-![Bulk-сообщения попадают в очередь в Postgres и отправляются через собственный Hangfire job каждого пользователя с интервалом 1.6 секунды; прямые сообщения и первое сообщение лиду идут в RingCentral напрямую, минуя очередь, и возвращаются в очередь только после 429](/sketches/sms/paths.svg)
-
-Поэтому bulk-кампании 30 пользователей не могут задержать прямое сообщение: они вообще не стоят в одной очереди. Bulk занимает только воркеры `sms`, а direct уходит внутри самого HTTP-запроса.
-
-## Очередь: машина состояний в Postgres
-
-Отдельного хранилища для очереди нет. Сообщение уже лежит в таблице `Messages`, а колонка `SmsStatus` задаёт его место в очереди:
+Стенд: fake RingCentral считает 40 запросов в окне 60 с и с 41-го возвращает 429. Один аккаунт, 5000 bulk, на 58-й секунде 5 direct:
 
 ```text
-Queued  -> Pending  -> Sending -> Sent
-                               -> Failed      (non-retryable ошибка)
-                               -> Queued      (429, истёкший токен, transient ошибка)
+ 58.0 s  direct #1 sent
+ 58.0 s  direct #2 sent
+ 58.0 s  direct #3 sent
+ 58.0 s  direct #4 429 -> Queued, behind 4963 bulk rows
+ 58.0 s  direct #5 429 -> Queued, behind 4963 bulk rows
+ 59.3 s  bulk  429, Retry-After 1s -> back to Queued
+first minute: bulk sent 37, 429 total 3 (direct, direct, bulk)
 ```
 
-`Queued` сообщение ждёт воркера, `Pending` воркер уже взял, `Sending` означает, что вызов RingCentral начат, но ответа ещё нет. Последний статус намеренно записывается до вызова RingCentral: если процесс умрёт в этот момент, сообщение можно выделить как «возможно отправленное».
+Два прямых сообщения получили 429, опустились в `Queued` и, поскольку очередь FIFO, оказались позади 4963 bulk-строк. «Срочное» сообщение стало самым медленным сообщением в системе, а RingCentral увидел три 429 за одну минуту.
 
-## Один воркер на пользователя
+## Решение: одни ворота, приоритет внутри очереди
 
-Диспетчер (`ProcessPendingSmsAsync`) запускается по cron каждые 5 минут и после каждой bulk-отправки. Он находит пользователей, у которых есть строки `Queued`, и создаёт по одному job на каждого. Сам job (`ProcessUserSmsAsync`) берёт 200 самых старых `Queued` сообщений этого пользователя, переводит их все в `Pending`, группирует по номеру `From`, отправляет по одному и, если осталось больше 200, ставит себя в очередь заново. Эти job'ы работают в отдельной очереди Hangfire `sms` с 5 воркерами: одновременно отправляют не более 5 пользователей, остальные ждут между порциями по 200.
+Правило одно: каждый запрос к RingCentral проходит через единственную очередь аккаунта, и в этой же очереди решаются и лимит, и приоритет. Срочное сообщение не обходит очередь, оно встаёт в её начало.
 
-Redis здесь гарантирует две вещи, и обе через один `SET NX EX`:
+![Каждое SMS сначала становится строкой в Postgres, outbox relay добавляет его как job в очередь BullMQ аккаунта, в очереди порядок задают приоритет и лимитер, вебхук RingCentral возвращает статус доставки в таблицу, а cron реконсилера заново добавляет строки, у которых job потерялся](/sketches/sms/architecture.svg)
 
-```text
-sms:dispatch:{userId}      SET NX EX 600   один dispatch job на пользователя в один момент
-sms:user:{userId}:lock     SET NX EX 900   один sender на пользователя в один момент
-ringcentral:token:{userId} cache           токен, обновляется за 20 минут до истечения
-```
+Технологии: NestJS, `@nestjs/bullmq` и BullMQ 6 (поверх Redis 7), Postgres (таблица `messages`, outbox), `@nestjs/schedule` (реконсилер), вебхук RingCentral (доставка). Задача каждой части:
 
-Без ключа dispatch cron и bulk endpoint создавали бы два job'а для одного пользователя. Блокировка же не даёт двум job'ам делить лимит 40 запросов в минуту одного пользователя; снимается она Lua-скриптом по принципу «удалить только если значение моё», чтобы истёкшую блокировку не удалил другой job. Если блокировку взять не удалось, job молча выходит: сообщения остаются в `Queued`, и следующий dispatch их подберёт.
+| Часть | Задача |
+| --- | --- |
+| `messages` (Postgres) | Источник истины. Строка записывается в одной транзакции с бизнес-записью, `idempotency_key` unique |
+| Очередь BullMQ `sms-{accountId}` | По одной на каждый аккаунт RingCentral. `priority`: direct 1, первое сообщение 2, bulk 3. `limiter`: один job в 1.667 с (36 в минуту, на 10% ниже 40). `concurrency: 1` |
+| Processor | Вызывает RingCentral. При 429 ставит очередь на паузу на срок `Retry-After`, job не тратит попытку |
+| Cron реконсилера | Заново добавляет строки в статусе `queued`, у которых нет живого job'а. Даже если Redis упадёт, сообщение не потеряется |
+| Вебхук | Записывает статусы `delivered` и `failed` в `messages`. «Sent» означает, что RingCentral принял, а не что доставлено |
 
-## 40 запросов в минуту
+## Код
 
-Воркер ждёт 1600 мс между двумя сообщениями, это 37.5 запросов в минуту. Оставшийся запас читается из заголовков ответа RingCentral: когда `X-Rate-Limit-Remaining` опускается до 2, воркер спит `X-Rate-Limit-Window` плюс 2 секунды и только потом продолжает. При 429 inline retry не делается, никогда: ошибка классифицируется, и job планирует себя на более позднее время.
-
-| Тип ошибки | Сообщение | Следующая попытка |
-| --- | --- | --- |
-| Non-retryable (неверный номер, MSG-240, opt-out) | `Failed` | нет, следующая группа продолжает |
-| Rate limit (429, CMN-301) | `Queued` | через 60 с |
-| Истёкший токен (401, OAU-213) | `Queued`, кэш токена очищается | через 10 с |
-| Прочие (transient) | `Queued` | через 30 с |
-
-Собственный retry Hangfire отключён (`Attempts = 0`). В предыдущей версии каждая ошибка создавала отдельный retry job, и 429 одного пользователя превращались в 450 job'ов в минуту. Теперь, как только в группе появляется первая «останавливающая» ошибка, оставшиеся сообщения возвращаются в `Queued`, и весь job завершается одной запланированной попыткой.
-
-![С интервалом 1.6 секунды уходит 37.5 SMS в минуту; когда оставшийся запас опускается до 2, воркер ждёт конца окна и потом продолжает](/sketches/sms/pacing.svg)
-
-## Не теряется и не уходит дважды
-
-У каждого статуса есть срок. Диспетчер при каждом запуске возвращает в `Queued` строки, которые провели в `Sending` больше 5 минут, и строки, которые провели в `Pending` больше 15 минут: умер ли воркер, прошёл ли деплой или истекла блокировка, сообщение всё равно возвращается в очередь. Число сообщений, которые стоят в `Queued` дольше 10 минут, выведено в отдельную метрику (`sms_queue_stuck_total`): если она начинает расти, воркеров не хватает.
-
-Защиту от повторной отправки даёт unique index на колонке `Messages.IdempotencyKey`, а сам ключ зависит от пути:
-
-```text
-bulk:{batchId}:{leadId}:{callerId}      одно сообщение одному лиду в одной кампании
-manual:{callerId}:{X-Client-Request-Id} повторно отправленный запрос из чата
-first_msg:{leadId}:{callerId}           первое сообщение лиду ровно один раз
-```
-
-Если в bulk передан `allowDuplicates=false`, вместо `batchId` в ключ входит хэш текста: тот же текст этому лиду второй раз не уйдёт. У строки `Failed` ключ очищается, поэтому её можно отправить повторно. Это тот же паттерн, что в посте про [ключ идемпотентности](/ru/blog/idempotency-keys), только сохраняется не ответ API, а строка сообщения.
-
-## Ограничения
-
-Нужно быть честным: direct и очередь ничего не знают друг о друге. Прямое сообщение, отправленное во время bulk, расходует запас 40 запросов в минуту этого же пользователя, при 429 попадает в `Queued` и, поскольку очередь FIFO, ждёт позади старых bulk-строк. `Sent` тоже означает «RingCentral принял», а не «доставлено»: delivery webhook не подключён. Запрос очереди по (`CreatedBy`, `SmsStatus`) работает без индекса, и когда таблица вырастет, это проявится первым.
-
-## Как это тестируется
-
-Тесты в проекте написаны на xUnit, а клиент RingCentral подменён на такой, который всегда возвращает 429: тогда каждое сообщение должно закончить в `Queued`, и вся логика очереди проверяется без сети. Что проверяется: при 1000 и 5000 параллельных отправках число строк ровно такое же; 50 пользователей x 30 лидов дают 1500 строк и ни одного повторяющегося номера; если одну кампанию отправить дважды, вторая получает `skipped`; `Sending` через 5 минут возвращается в `Queued`; статус `Sending` записывается до вызова RingCentral.
-
-Те же идеи в NestJS и Jest выглядят так. Вместо RingCentral fake, который бросает 429, вместо репозитория `Map` в памяти:
+Сообщение сначала попадает в таблицу, а не в очередь. Тогда у HTTP-запроса и события лида один путь, и дубликаты останавливаются в базе:
 
 ```ts
-class RateLimitedRingCentral implements RingCentralClient {
-  calls = 0;
-  async sendSms(): Promise<never> {
-    this.calls++;
-    throw new RingCentralError(429, "Too Many Requests", { retryAfter: 60 });
+// messages.repository.ts
+// One row per message. The idempotency key stops the same message from being
+// created twice: a retried HTTP request, a re-delivered lead event, a double click.
+export type Kind = "direct" | "first_message" | "bulk";
+
+export class MessagesRepository {
+  constructor(private readonly db: Pool) {}
+
+  async create(tx: PoolClient, m: { accountId: string; kind: Kind; to: string; body: string; key: string }) {
+    const { rows } = await tx.query<{ id: string }>(
+      `INSERT INTO messages (account_id, kind, "to", body, idempotency_key, status)
+       VALUES ($1, $2, $3, $4, $5, 'queued')
+       ON CONFLICT (idempotency_key) DO NOTHING
+       RETURNING id`,
+      [m.accountId, m.kind, m.to, m.body, m.key],
+    );
+    return rows[0]?.id ?? null; // null: already exists, nothing to enqueue
+  }
+}
+```
+
+Ключ строится в зависимости от пути: `bulk:{campaignId}:{leadId}`, `direct:{accountId}:{clientRequestId}`, `first:{leadId}`. Это тот же паттерн, что в посте про [ключ идемпотентности](/ru/blog/idempotency-keys), только сохраняется не ответ API, а строка сообщения.
+
+Очередь и воркер для каждого аккаунта создаются в одном процессе через registry. В BullMQ 6 имя очереди не может содержать `:`, поэтому `sms-{accountId}`:
+
+```ts
+// sms-queues.ts
+// One Queue and one Worker per RingCentral account. The limiter is the single gate:
+// at most one job every 1667 ms, so no 60-second window ever holds more than 36 calls.
+import { Queue, Worker, Job } from "bullmq";
+
+export const PRIORITY: Record<Kind, number> = { direct: 1, first_message: 2, bulk: 3 };
+
+@Injectable()
+export class SmsQueues implements OnModuleDestroy {
+  private readonly queues = new Map<string, Queue>();
+  private readonly workers = new Map<string, Worker>();
+
+  constructor(private readonly connection: IORedis, private readonly processor: SmsProcessor) {}
+
+  for(accountId: string): Queue {
+    let queue = this.queues.get(accountId);
+    if (queue) return queue;
+    const name = `sms-${accountId}`;
+    queue = new Queue(name, { connection: this.connection });
+    const worker = new Worker(name, (job) => this.processor.handle(job, worker), {
+      connection: this.connection,
+      concurrency: 1,
+      limiter: { max: 1, duration: 1_667 }, // 36 per minute, under RingCentral's 40
+    });
+    this.queues.set(accountId, queue);
+    this.workers.set(accountId, worker);
+    return queue;
+  }
+
+  async onModuleDestroy() {
+    // Finish the job in flight, then stop; the limiter state stays in Redis.
+    await Promise.all([...this.workers.values()].map((w) => w.close()));
+  }
+}
+```
+
+Добавление в очередь бывает двух видов: одно сообщение и целая кампания. В обоих случаях `jobId` равен id сообщения, поэтому если одно сообщение добавить дважды, BullMQ отбросит второе:
+
+```ts
+// sms-enqueue.service.ts
+@Injectable()
+export class SmsEnqueueService {
+  constructor(private readonly queues: SmsQueues) {}
+
+  async one(accountId: string, messageId: string, kind: Kind) {
+    await this.queues.for(accountId).add(kind, { messageId }, this.opts(messageId, kind));
+  }
+
+  // A 5000-lead campaign is one round trip to Redis, not 5000.
+  async campaign(accountId: string, messageIds: string[]) {
+    await this.queues.for(accountId).addBulk(
+      messageIds.map((messageId) => ({ name: "bulk", data: { messageId }, opts: this.opts(messageId, "bulk") })),
+    );
+  }
+
+  private opts(messageId: string, kind: Kind): JobsOptions {
+    return {
+      jobId: messageId,            // idempotent: the same message is one job
+      priority: PRIORITY[kind],    // lower number runs first
+      attempts: 5,                 // transient errors only, see the processor
+      backoff: { type: "exponential", delay: 5_000 },
+      removeOnComplete: 10_000,    // keep a window of history for the dashboard
+      removeOnFail: false,         // failed jobs stay visible until someone looks
+    };
+  }
+}
+```
+
+![5000 bulk-job'ов стоят в очереди аккаунта, direct job с приоритетом 1 будет взят следующим, а лимитер пропускает один job каждые 1.67 с, поэтому RingCentral не видит 429](/sketches/sms/priority.svg)
+
+Processor различает три вида ошибок. Самый важный случай 429: job не падает, попытка не тратится, вся очередь встаёт на паузу на срок `Retry-After`:
+
+```ts
+// sms.processor.ts
+@Injectable()
+export class SmsProcessor {
+  constructor(private readonly messages: MessagesRepository, private readonly rc: RingCentralClient) {}
+
+  async handle(job: Job<{ messageId: string }>, worker: Worker) {
+    const message = await this.messages.get(job.data.messageId);
+    if (!message || message.status !== "queued") return; // already sent or cancelled
+
+    // Written before the call: if the process dies here, the row is "maybe sent"
+    // and the reconciler will not blindly re-add it.
+    await this.messages.setStatus(message.id, "sending");
+    try {
+      const sent = await this.rc.sendSms(message.accountId, message.to, message.body);
+      await this.messages.markSent(message.id, sent.id); // the webhook will upgrade it to delivered
+    } catch (e) {
+      if (e instanceof RingCentralError && e.status === 429) {
+        // Pause this account's queue for the provider's window; the job stays queued.
+        await worker.rateLimit((e.retryAfter ?? 60) * 1000);
+        await this.messages.setStatus(message.id, "queued");
+        throw Worker.RateLimitError();
+      }
+      if (isNonRetryable(e)) {
+        // Invalid number, opted out, blocked content: retrying cannot help.
+        await this.messages.markFailed(message.id, e.code);
+        return;
+      }
+      await this.messages.setStatus(message.id, "queued");
+      throw e; // transient: attempts and backoff take over
+    }
+  }
+}
+```
+
+Реконсилер служит страховкой очереди. Redis упал, процесс умер до того, как добавил job, кто-то вручную почистил очередь при `removeOnFail`: во всех случаях строка в Postgres остаётся, и cron её увидит:
+
+```ts
+// sms-reconciler.ts
+@Injectable()
+export class SmsReconciler {
+  constructor(private readonly messages: MessagesRepository, private readonly queues: SmsQueues, private readonly enqueue: SmsEnqueueService) {}
+
+  @Cron("*/2 * * * *")
+  async run() {
+    // "sending" older than 5 minutes: the worker died mid-call. Back to queued.
+    await this.messages.requeueStale("sending", "5 minutes");
+
+    // queued rows whose job is gone: re-add them under the same jobId.
+    for (const row of await this.messages.queuedOlderThan("1 minute")) {
+      const job = await this.queues.for(row.accountId).getJob(row.id);
+      if (!job) await this.enqueue.one(row.accountId, row.id, row.kind);
+    }
+  }
+}
+```
+
+Последнее слово в `messages` за вебхуком. При создании subscription RingCentral требует вернуть заголовок `Validation-Token`, а затем присылает событие на каждое изменение статуса сообщения:
+
+```ts
+// ringcentral-webhook.controller.ts
+@Controller("webhooks/ringcentral")
+export class RingCentralWebhookController {
+  constructor(private readonly messages: MessagesRepository) {}
+
+  @Post()
+  @HttpCode(200)
+  async receive(@Headers("validation-token") token: string | undefined, @Res({ passthrough: true }) res: Response, @Body() event: RcEvent) {
+    if (token) {
+      res.setHeader("Validation-Token", token); // subscription handshake
+      return;
+    }
+    const { id, messageStatus } = event.body;
+    if (messageStatus === "Delivered") await this.messages.markDelivered(id);
+    if (messageStatus === "DeliveryFailed" || messageStatus === "SendingFailed") await this.messages.markFailed(id, messageStatus);
+  }
+}
+```
+
+## Измерение
+
+Тот же стенд, та же нагрузка: 5000 bulk, на 58-й секунде 5 direct. BullMQ `limiter: { max: 1, duration: 1667 }`, приоритет direct 1, bulk 3:
+
+```text
+  0.4 s  5000 bulk jobs added
+ 58.4 s  5 direct jobs added
+ 58.9 s  direct d1 sent after 507 ms in queue
+ 60.5 s  direct d2 sent after 2174 ms in queue
+ 62.2 s  direct d3 sent after 3842 ms in queue
+ 63.9 s  direct d4 sent after 5511 ms in queue
+ 65.6 s  direct d5 sent after 7179 ms in queue
+sent 42 (bulk 37, direct 5), 429 total 0, queue pauses 0
+job counts: {"waiting":0,"prioritized":4963,"completed":42,"failed":0}
+```
+
+Ноль 429. Первое прямое сообщение ушло за 507 мс (следующий свободный слот), остальные по одному каждые 1.67 с: хотя в очереди стояло 4963 bulk, direct job'ы заняли пять слотов подряд. Счёт job'ов 42 + 4963 = 5005: 5000 bulk, 5 direct, а одно сообщение, намеренно добавленное на стенде дважды, лишнего job'а не создало.
+
+![Первая минута: в старом подходе bulk уходит каждые 1.6 с, а 5 direct на 58-й секунде выводят за лимит 40, и два из них получают 429; в новом подходе все запросы идут в слотах по 1.67 с, direct занимает ближайшие слоты, и 429 нет](/sketches/sms/first-minute.svg)
+
+Второй прогон: допустим, провайдер без предупреждения снизил лимит до 30, то есть с нашим лимитером на 36 429 всё равно придёт:
+
+```text
+ 50.2 s  429 from RingCentral: queue paused for 10 s, job b30 kept
+ 58.0 s  5 direct jobs added
+ 60.2 s  direct d1 sent after 2164 ms in queue
+ ...
+ 66.9 s  direct d5 sent after 8835 ms in queue
+sent 36 (bulk 31, direct 5), 429 total 1, queue pauses 1
+job counts: {"waiting":0,"prioritized":4969,"completed":36,"failed":0}
+```
+
+Один 429, очередь встала на паузу на 10 с согласно `Retry-After`, job не упал, а после паузы прямые сообщения ушли первыми. Здесь нужно быть честным: пауза останавливает весь аккаунт, и direct тоже ждал 2.2 с. Это правильное поведение, потому что каждый запрос, отправленный во время паузы, снова получил бы 429, и блокировка стала бы ближе.
+
+## Тесты
+
+Без сети проверяются две вещи: порядок приоритетов и то, что после 429 job не теряется. Redis настоящий (локальный или Testcontainers), RingCentral fake, лимитер в тесте уменьшен до 50 мс, так что тест проходит за миллисекунды, а не за секунды:
+
+```ts
+// sms.e2e.spec.ts
+class FakeRingCentral implements RingCentralClient {
+  sent: string[] = [];
+  failWith429 = 0; // how many calls to reject before behaving
+
+  async sendSms(_account: string, to: string) {
+    if (this.failWith429-- > 0) throw new RingCentralError(429, "Too Many Requests", { retryAfter: 1 });
+    this.sent.push(to);
+    return { id: `rc-${this.sent.length}` };
   }
 }
 
-it("5000 параллельных отправок: все Queued, ни одна не теряется", async () => {
-  const batches = users.map((u) => service.enqueueBulk(u.id, leadsOf(u), "Hi {{name}}", { allowDuplicates: true }));
-  await Promise.all(batches);
-  const rows = [...repo.values()];
-  expect(rows).toHaveLength(5000);
-  expect(rows.every((m) => m.status === "Queued")).toBe(true);
-  expect(new Set(rows.map((m) => m.idempotencyKey)).size).toBe(5000);
+it("a direct message overtakes a 1000-job bulk campaign", async () => {
+  await enqueue.campaign("acc-1", bulkIds); // 1000 queued rows
+  await enqueue.one("acc-1", directId, "direct");
+  await waitFor(() => rc.sent.length >= 2);
+  expect(rc.sent[0]).toBe(directTo);       // first slot after the one already running
+  expect(rc.sent.slice(1).every((to) => to.startsWith("+1555"))).toBe(true);
+});
+
+it("a 429 pauses the queue and loses nothing", async () => {
+  rc.failWith429 = 1;
+  await enqueue.campaign("acc-1", bulkIds.slice(0, 20));
+  await waitFor(() => rc.sent.length === 20, { timeout: 5_000 }); // resumes after retryAfter
+  const counts = await queues.for("acc-1").getJobCounts("failed", "completed");
+  expect(counts).toEqual({ failed: 0, completed: 20 });
+  expect(await messages.countByStatus("acc-1", "failed")).toBe(0);
 });
 ```
 
-Второй тест проверяет порядок статусов. Fake-клиент в момент вызова записывает, в каком статусе находится сообщение:
+Третий тест для реконсилера: записывается строка `queued`, job намеренно не добавляется, cron вызывается один раз, и проверяется, что job появился. Четвёртый для вебхука: запрос с `Validation-Token` возвращает 200 с этим же заголовком, а событие `Delivered` переводит строку в `delivered`.
 
-```ts
-it("статус Sending записывается до вызова RingCentral", async () => {
-  const seen: string[] = [];
-  rc.sendSms = async ({ messageId }) => {
-    seen.push(repo.get(messageId)!.status);
-    return { id: "rc-1" };
-  };
-  await worker.processUser(user.id); // с одним сообщением в Queued
-  expect(seen).toEqual(["Sending"]);
-  expect(repo.get(message.id)!.status).toBe("Sent");
-});
-```
+## Ограничения
 
-Третий проверяет ключ dispatch: если `SET NX` через `ioredis-mock` вызвать дважды, второй диспетчер не должен создать job. Эти три теста покрывают три главных обещания очереди: не теряется, не уходит дважды, один sender на пользователя в один момент.
+Лимитер BullMQ управляет очередью аккаунта и ничем больше: любой другой вызов, расходующий группу Medium этого аккаунта (например, список номеров), тоже должен проходить через эту очередь, иначе лимит снова делится на два места. Один Worker на аккаунт означает одно блокирующее соединение с Redis: 100 аккаунтов, 100 соединений, это нормально, но помните о `maxclients` в Redis. Групповые очереди (одна queue, группа по аккаунту и лимит на группу) есть в BullMQ Pro, а он платный. Когда появится multi-tenancy, имя очереди станет `sms-{tenantId}-{accountId}`, но лимит всё равно останется на уровне аккаунта, потому что RingCentral считает именно так.
 
 ## Правила
 
-1. Решайте приоритет не внутри очереди, а вне её: срочное сообщение вообще не должно попадать в очередь.
-2. Не угадывайте лимит, читайте его из заголовков провайдера и не делайте inline retry при 429.
-3. Не отдавайте retry фреймворку: классифицируйте ошибку, и пусть каждый job планирует себя один раз, иначе job'ы размножатся.
-4. Задайте срок каждому статусу в очереди и напишите cron, который возвращает просроченные. Смерть воркера: нормальная ситуация.
+1. Лимит провайдера считается в одних воротах, и все пути проходят через них. «Срочный» путь в обход очереди: источник 429.
+2. Приоритет внутри очереди, вместе с лимитом. Срочное сообщение не убегает от очереди, оно встаёт в её начало.
+3. Настраивайте лимитер как интервал, а не как окно: `1 / 1667 ms` не превысит 36 в любые 60 с, а `36 / 60 s` пропускает все 36 разом в начале окна и, если окно сдвинуто относительно окна провайдера, даёт 429.
+4. Не повторяйте 429, ждите: ставьте очередь на паузу на срок `Retry-After` и возвращайте job без траты попытки.
+5. Источник истины Postgres, а очередь: планировщик. Без реконсилера, который возвращает строки без живого job'а, в день падения Redis сообщения потеряются.
