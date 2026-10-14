@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, -apple-system, sans-serif;
   /* Code only. The system stack, nothing downloaded. */
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
@@ -124,11 +124,19 @@ html[data-vt="theme"]::view-transition-new(root) {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Frosted glass: translucent enough for the page to show through, blurred and
+     saturated so it reads as colour rather than noise. Only the standard property is
+     written: Lightning CSS adds the -webkit- one for Safari, and when both were written
+     by hand it kept only the prefixed one, which Chrome ignores. */
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid transparent;
   transition: border-color 0.3s;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .header {
+    background: var(--bg);
+  }
 }
 .header.is-scrolled {
   border-color: var(--line);
@@ -267,9 +275,23 @@ html[data-vt="theme"]::view-transition-new(root) {
     color 0.2s,
     background-color 0.2s;
 }
-.tag:hover {
+.tag:hover,
+.tag[aria-current="page"] {
   color: var(--fg);
   background: color-mix(in srgb, var(--fg) 10%, transparent);
+}
+.tag-count {
+  margin-left: 0.3rem;
+  color: var(--fg-3);
+  font-variant-numeric: tabular-nums;
+}
+/* A selected filter reads as switched on: inverted, in both themes. */
+.tag[aria-pressed="true"] {
+  color: var(--bg);
+  background: var(--fg);
+}
+.tag[aria-pressed="true"] .tag-count {
+  color: color-mix(in srgb, var(--bg) 65%, var(--fg));
 }
 
 /* ── Lists ─────────────────────────────────────────────────────────────
@@ -372,47 +394,155 @@ html[data-vt="theme"]::view-transition-new(root) {
 
 /* ── Post page ─────────────────────────────────────────────────────── */
 
+/* Table of contents: a rail of dashes on the right edge, one per heading, that opens into
+   the full list on hover, keyboard focus or a tap. The links stay focusable while the
+   panel is closed (opacity, not visibility), so tabbing into one opens it. */
 .toc {
-  position: absolute;
-  top: 0;
-  left: 100%;
-  height: 100%;
-  width: 12rem;
-  margin-left: 4rem;
+  display: none;
+  position: fixed;
+  top: 50%;
+  right: max(1.25rem, env(safe-area-inset-right));
+  z-index: 30;
+  transform: translateY(-50%);
 }
-.toc-inner {
-  position: sticky;
-  top: 5.5rem;
+@media (min-width: 768px) {
+  .toc {
+    display: block;
+  }
 }
-.toc-list {
-  position: relative;
-  border-left: 1px solid var(--line);
+.toc-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 0 0.75rem 1rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
-.toc-marker {
-  position: absolute;
-  left: -1px;
-  top: 0;
-  width: 1px;
-  height: 0;
-  background: var(--fg);
+.toc-rail span {
+  width: 0.75rem;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--fg-3);
   transition:
-    transform 0.3s var(--swift),
-    height 0.3s var(--swift);
+    width 0.3s var(--swift),
+    background-color 0.2s;
+}
+.toc-rail span[data-depth="3"] {
+  width: 0.5rem;
+}
+.toc-rail span.is-active {
+  width: 1.125rem;
+  background: var(--fg);
+}
+.toc-panel {
+  position: absolute;
+  top: 50%;
+  right: -0.5rem;
+  width: max-content;
+  max-width: min(20rem, calc(100vw - 3rem));
+  max-height: 70vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(0.5rem, -50%) scale(0.98);
+  transform-origin: right center;
+  /* Closing waits a beat, so crossing the gap between rail and panel doesn't snap it shut. */
+  transition:
+    opacity 0.2s var(--swift) 0.15s,
+    transform 0.25s var(--swift) 0.15s;
+}
+.toc:hover .toc-panel,
+.toc:focus-within .toc-panel,
+.toc.is-open .toc-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, -50%);
+  transition-delay: 0s;
+}
+.toc:hover .toc-rail,
+.toc:focus-within .toc-rail,
+.toc.is-open .toc-rail {
+  opacity: 0;
 }
 .toc a {
+  position: relative;
   display: block;
-  padding: 0.22rem 0 0.22rem 1rem;
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: var(--fg-3);
-  transition: color 0.2s;
+  padding: 0.3rem 0.75rem 0.3rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--fg-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
 }
 .toc a[data-depth="3"] {
-  padding-left: 1.75rem;
+  padding-left: 2.25rem;
 }
 .toc a:hover,
-.toc a.is-active {
+.toc a:focus-visible {
   color: var(--fg);
+  background: var(--fill);
+}
+.toc a.is-active {
+  color: var(--ok);
+}
+.toc a.is-active::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0.55rem;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+.toc a[data-depth="3"].is-active::before {
+  left: 1.55rem;
+}
+
+/* Back to top: appears once the reader is a screen into the post. */
+.to-top {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--fg-2);
+  box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.25);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition:
+    opacity 0.2s,
+    transform 0.3s var(--swift),
+    color 0.2s,
+    border-color 0.2s;
+}
+.to-top.is-visible {
+  opacity: 1;
+  transform: none;
+}
+.to-top:hover {
+  color: var(--fg);
+  border-color: var(--fg-3);
 }
 
 .pager {
@@ -512,9 +642,31 @@ html[data-vt="theme"]::view-transition-new(root) {
   background: var(--line);
   margin-block: 2.5em;
 }
-.prose img {
+.prose img,
+.prose video {
+  display: block;
+  width: 100%;
+  height: auto;
   border-radius: 8px;
   border: 1px solid var(--line);
+}
+/* Sketches are hand-drawn diagrams on a transparent background: no frame, and dark mode flips
+   them the way Excalidraw does, so a single SVG serves both themes. */
+.prose img[src^="/sketches/"] {
+  border: 0;
+  border-radius: 0;
+}
+.dark .prose img[src^="/sketches/"] {
+  filter: invert(93%) hue-rotate(180deg);
+}
+/* Sketches are drawn 760 to 900px wide; on wider screens they break out of the column by 3rem
+   on each side, which still clears the TOC's 4rem gutter. */
+@media (min-width: 52rem) {
+  .prose img[src^="/sketches/"] {
+    width: calc(100% + 6rem);
+    max-width: none;
+    margin-inline: -3rem;
+  }
 }
 .prose table {
   width: 100%;

@@ -49,6 +49,8 @@ pnpm astro dev stop
 
 ## Writing a post
 
+The full playbook (measuring, writing, sketches, translations, checks) is in [AGENTS.md](AGENTS.md#writing-a-post). The short version:
+
 Create `src/content/blog/<slug>.md`. The filename becomes the URL: `/blog/<slug>`.
 
 ```yaml
@@ -67,6 +69,30 @@ Start the body with `##` headings. The page renders the title as the `<h1>`, and
 
 Each post automatically gets its own page, tag pages, an RSS entry, a sitemap entry, and an OG image at `/og/<slug>.png`.
 
+### Translations
+
+Posts are written in Uzbek. A translation is the same filename under `en/` or `ru/`:
+
+| File | URL |
+| --- | --- |
+| `src/content/blog/<slug>.md` | `/blog/<slug>` |
+| `src/content/blog/en/<slug>.md` | `/en/blog/<slug>` |
+| `src/content/blog/ru/<slug>.md` | `/ru/blog/<slug>` |
+
+A post page links to every language it exists in and emits `hreflang` alternates. Lists, tag pages and RSS show the Uzbek originals only. The site chrome stays in English.
+
+### Sketches and media
+
+Diagrams are hand-drawn SVGs generated from code with [rough.js](https://roughjs.com) and Excalidraw's Virgil font (OFL-1.1, text converted to paths). Define one in `scripts/sketches/build.ts` and run:
+
+```bash
+pnpm sketches            # every sketch into public/sketches/<post>/<name>.svg
+pnpm sketches outbox     # only names starting with "outbox"
+pnpm sketches:preview    # PNG previews in <tmpdir>/sketches-preview
+```
+
+Animations are CSS inside the SVG and only run when the reader allows motion. Sketches are drawn for a light background; dark mode inverts them the way Excalidraw does. Labels stay technical and language-neutral so one image serves every translation; the alt text is translated in each post. Recordings live in `public/media/` (MP4 with a poster frame rather than multi-megabyte GIFs).
+
 ## Project structure
 
 ```text
@@ -75,14 +101,19 @@ src/
 ├── content.config.ts      Blog collection schema
 ├── content/blog/          Markdown posts
 ├── layouts/BaseLayout.astro   Document shell and all client-side behavior
+├── layouts/PostLayout.astro   Post page, shared by every language
 ├── components/            Header, footer, post list, icons, SEO head
 ├── lib/                   Post loading, reading time, date formatting
 ├── pages/
 │   ├── index.astro        Home
 │   ├── blog/              Post list, post pages, tag pages
-│   ├── og/[slug].png.ts   OG image generation
+│   ├── [lang]/blog/       Translated post pages (en, ru)
+│   ├── og/[...slug].png.ts  OG image generation, one per post and language
 │   └── rss.xml.ts         RSS feed
 └── styles/global.css      Tailwind entry, design tokens, prose styles
+scripts/sketches/          Sketch generator, Virgil font and its license
+public/sketches/           Generated sketches (do not edit by hand)
+public/media/              Recordings embedded in posts
 ```
 
 ## Deployment

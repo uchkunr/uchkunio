@@ -1,0 +1,177 @@
+---
+import { render } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import Icon from "@/components/Icon.astro";
+import { SITE } from "@/config/site";
+import { formatDate } from "@/lib/date";
+import {
+  DEFAULT_LOCALE,
+  getTranslations,
+  LOCALE_NAMES,
+  localeOf,
+  OG_LOCALES,
+  postUrl,
+  readingTime,
+  type Post,
+} from "@/lib/posts";
+
+interface Props {
+  post: Post;
+  newer: Post | null;
+  older: Post | null;
+}
+
+const { post, newer, older } = Astro.props;
+const { Content, headings } = await render(post);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const url = postUrl(post);
+const locale = localeOf(post);
+const translations = await getTranslations(post);
+const original = translations.find((t) => localeOf(t) === DEFAULT_LOCALE) ?? post;
+
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: post.data.title,
+  description: post.data.excerpt,
+  datePublished: post.data.date,
+  inLanguage: locale,
+  author: { "@type": "Person", name: SITE.name, url: SITE.url },
+  publisher: { "@type": "Person", name: SITE.name },
+  mainEntityOfPage: { "@type": "WebPage", "@id": new URL(url, SITE.url).href },
+  keywords: post.data.tags.join(", "),
+};
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.excerpt}
+  ogImage={`/og/${post.id}.png`}
+  ogLocale={OG_LOCALES[locale]}
+  lang={locale}
+  alternates={[
+    ...translations.map((t) => ({ hreflang: localeOf(t), href: postUrl(t) })),
+    { hreflang: "x-default", href: postUrl(original) },
+  ]}
+  type="article"
+  publishedDate={post.data.date}
+  tags={post.data.tags}
+  headerTitle={post.data.title}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  <Breadcrumbs items={[{ name: "Writing", href: "/blog" }, { name: post.data.title, href: url }]} />
+
+  <div class="mx-auto max-w-[40rem] px-6 pt-10 pb-20 sm:pt-16">
+    <article data-article>
+      <a href="/blog" class="quiet inline-flex items-center gap-1.5 text-sm" data-reveal style="--i: 0">
+        <Icon name="arrow-left" size={14} />
+        Writing
+      </a>
+
+      <h1
+        class="mt-8 text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.025em] text-balance sm:text-[2rem]"
+        data-article-title
+        data-reveal
+        style="--i: 1"
+      >
+        {post.data.title}
+      </h1>
+
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3" data-reveal style="--i: 2">
+        <p class="meta">
+          <time datetime={post.data.date}>{formatDate(post.data.date, "long")}</time>
+          <span class="mx-1.5 text-fg-3">·</span>
+          {readingTime(post.body ?? "")}
+        </p>
+        {
+          translations.length > 1 && (
+            <nav class="flex gap-1.5" aria-label="Language">
+              {translations.map((t) => (
+                <a
+                  href={postUrl(t)}
+                  hreflang={localeOf(t)}
+                  lang={localeOf(t)}
+                  class="tag"
+                  aria-current={t.id === post.id ? "page" : undefined}
+                >
+                  {LOCALE_NAMES[localeOf(t)]}
+                </a>
+              ))}
+            </nav>
+          )
+        }
+      </div>
+
+      {
+        post.data.cover && (
+          <img
+            src={post.data.cover}
+            alt=""
+            class="mt-8 w-full rounded-lg border border-line"
+            loading="eager"
+            decoding="async"
+            data-reveal
+            style="--i: 3"
+          />
+        )
+      }
+
+      <div class="prose mt-10" data-reveal="soft" style="--i: 3">
+        <Content />
+      </div>
+
+      <footer class="mt-12 flex flex-wrap items-center gap-2">
+        <span class="mr-1 text-sm text-fg-3">Tagged</span>
+        {post.data.tags.map((tag) => <a href={`/blog/tags/${tag}`} class="tag">{tag}</a>)}
+      </footer>
+
+      {
+        (older || newer) && (
+          <nav class="pager" aria-label="More posts">
+            {older ? (
+              <a href={postUrl(older)}>
+                <span class="meta">Older</span>
+                <span class="pager-title text-balance">{older.data.title}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+            {newer ? (
+              <a href={postUrl(newer)} class="sm:items-end sm:text-right">
+                <span class="meta">Newer</span>
+                <span class="pager-title text-balance">{newer.data.title}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+          </nav>
+        )
+      }
+
+    </article>
+  </div>
+
+  {
+    toc.length > 2 && (
+      <nav class="toc" data-toc aria-label="Table of contents">
+        <div class="toc-rail" data-toc-rail aria-hidden="true">
+          {toc.map((h) => (
+            <span data-depth={h.depth} />
+          ))}
+        </div>
+        <div class="toc-panel">
+          {toc.map((h) => (
+            <a href={`#${h.slug}`} data-depth={h.depth}>
+              {h.text}
+            </a>
+          ))}
+        </div>
+      </nav>
+    )
+  }
+
+  <button type="button" class="to-top" data-to-top aria-label="Back to top" inert>
+    <Icon name="arrow-up" size={16} />
+  </button>
+</BaseLayout>

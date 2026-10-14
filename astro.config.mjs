@@ -6,6 +6,9 @@ import vercel from "@astrojs/vercel";
 
 export default defineConfig({
   site: "https://uchkun.io",
+  // One URL per page: internal links, hreflang, canonical and the sitemap all omit the slash,
+  // and Vercel redirects /path/ to /path.
+  trailingSlash: "never",
   output: "server",
   adapter: vercel(),
   integrations: [sitemap()],
@@ -14,11 +17,12 @@ export default defineConfig({
   fonts: [
     {
       provider: fontProviders.google(),
-      name: "Outfit",
-      cssVariable: "--font-outfit",
+      // Jost covers Latin (with Uzbek oʻ and gʻ) and Cyrillic, so one family serves every language.
+      name: "Jost",
+      cssVariable: "--font-jost",
       weights: ["400 600"],
       styles: ["normal"],
-      subsets: ["latin"],
+      subsets: ["latin", "cyrillic"],
       fallbacks: ["sans-serif"],
     },
   ],

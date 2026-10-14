@@ -6,7 +6,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "sketches": "node scripts/sketches/build.ts",
+    "sketches:preview": "node scripts/sketches/preview.ts"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -20,6 +22,8 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "opentype.js": "2.0.0",
+    "roughjs": "4.6.6",
     "tailwindcss": "^4.3.3"
   }
 }

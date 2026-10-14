@@ -5,7 +5,7 @@ export const SITE = {
   description:
     "Backend Engineer specializing in scalable distributed systems. 4+ years building with Node.js, TypeScript, NestJS, PostgreSQL, and cloud infrastructure.",
   url: "https://uchkun.io",
-  ogImage: "/og-image.jpg",
+  ogImage: "/og.png",
   twitterHandle: "@uchkunrakhimov",
   locale: "en_US",
 } as const;

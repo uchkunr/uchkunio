@@ -1,136 +1,17 @@
 ---
 export const prerender = true;
-import { render } from "astro:content";
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import Breadcrumbs from "@/components/Breadcrumbs.astro";
-import Icon from "@/components/Icon.astro";
-import { SITE } from "@/config/site";
-import { formatDate } from "@/lib/date";
-import { getPosts, readingTime } from "@/lib/posts";
+import PostLayout from "@/layouts/PostLayout.astro";
+import { getPosts, slugOf } from "@/lib/posts";
 
 export async function getStaticPaths() {
   const posts = await getPosts();
   return posts.map((post, i) => ({
-    params: { slug: post.id },
+    params: { slug: slugOf(post) },
     props: { post, newer: posts[i - 1] ?? null, older: posts[i + 1] ?? null },
   }));
 }
 
 const { post, newer, older } = Astro.props;
-const { Content, headings } = await render(post);
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
-const url = `/blog/${post.id}`;
-
-const articleSchema = {
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  headline: post.data.title,
-  description: post.data.excerpt,
-  datePublished: post.data.date,
-  author: { "@type": "Person", name: SITE.name, url: SITE.url },
-  publisher: { "@type": "Person", name: SITE.name },
-  mainEntityOfPage: { "@type": "WebPage", "@id": new URL(url, SITE.url).href },
-  keywords: post.data.tags.join(", "),
-};
 ---
 
-<BaseLayout
-  title={post.data.title}
-  description={post.data.excerpt}
-  ogImage={`/og/${post.id}.png`}
-  type="article"
-  publishedDate={post.data.date}
-  tags={post.data.tags}
-  headerTitle={post.data.title}
->
-  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
-  <Breadcrumbs items={[{ name: "Writing", href: "/blog" }, { name: post.data.title, href: url }]} />
-
-  <div class="mx-auto max-w-[40rem] px-6 pt-10 pb-20 sm:pt-16">
-    <article class="relative" data-article>
-      <a href="/blog" class="quiet inline-flex items-center gap-1.5 text-sm" data-reveal style="--i: 0">
-        <Icon name="arrow-left" size={14} />
-        Writing
-      </a>
-
-      <h1
-        class="mt-8 text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.025em] text-balance sm:text-[2rem]"
-        data-article-title
-        data-reveal
-        style="--i: 1"
-      >
-        {post.data.title}
-      </h1>
-
-      <p class="meta mt-4" data-reveal style="--i: 2">
-        <time datetime={post.data.date}>{formatDate(post.data.date, "long")}</time>
-        <span class="mx-1.5 text-fg-3">·</span>
-        {readingTime(post.body ?? "")}
-      </p>
-
-      {
-        post.data.cover && (
-          <img
-            src={post.data.cover}
-            alt=""
-            class="mt-8 w-full rounded-lg border border-line"
-            loading="eager"
-            decoding="async"
-            data-reveal
-            style="--i: 3"
-          />
-        )
-      }
-
-      <div class="prose mt-10" data-reveal="soft" style="--i: 3">
-        <Content />
-      </div>
-
-      <footer class="mt-12 flex flex-wrap items-center gap-2">
-        <span class="mr-1 text-sm text-fg-3">Tagged</span>
-        {post.data.tags.map((tag) => <a href={`/blog/tags/${tag}`} class="tag">{tag}</a>)}
-      </footer>
-
-      {
-        (older || newer) && (
-          <nav class="pager" aria-label="More posts">
-            {older ? (
-              <a href={`/blog/${older.id}`}>
-                <span class="meta">Older</span>
-                <span class="pager-title text-balance">{older.data.title}</span>
-              </a>
-            ) : (
-              <span />
-            )}
-            {newer ? (
-              <a href={`/blog/${newer.id}`} class="sm:items-end sm:text-right">
-                <span class="meta">Newer</span>
-                <span class="pager-title text-balance">{newer.data.title}</span>
-              </a>
-            ) : (
-              <span />
-            )}
-          </nav>
-        )
-      }
-
-      {
-        toc.length > 2 && (
-          <aside class="toc hidden xl:block" data-toc>
-            <div class="toc-inner">
-              <p class="mb-3 text-[0.75rem] font-medium text-fg-3">On this page</p>
-              <nav class="toc-list" aria-label="Table of contents">
-                <span class="toc-marker" data-toc-marker aria-hidden="true" />
-                {toc.map((h) => (
-                  <a href={`#${h.slug}`} data-depth={h.depth}>
-                    {h.text}
-                  </a>
-                ))}
-              </nav>
-            </div>
-          </aside>
-        )
-      }
-    </article>
-  </div>
-</BaseLayout>
+<PostLayout post={post} newer={newer} older={older} />
