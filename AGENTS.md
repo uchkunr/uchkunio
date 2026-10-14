@@ -10,7 +10,7 @@ Guidance for anyone working in this repository, human or agent (Claude Code read
 | --- | --- |
 | Framework | Astro 7 (`output: "server"`, every route prerendered) |
 | UI | Tailwind CSS v4 plus hand-written CSS in `global.css`. No client framework: all interactivity is vanilla TypeScript in Astro `<script>` tags |
-| Fonts | Outfit via Astro's `fonts` config (Google provider, self-hosted at build). Code uses the system monospace stack |
+| Fonts | Jost (Latin and Cyrillic) via Astro's `fonts` config (Google provider, self-hosted at build). Code uses the system monospace stack |
 | Language | TypeScript, `astro/tsconfigs/strict` |
 | Package manager | **pnpm** (not npm, yarn, or bun) |
 | Hosting | Vercel via `@astrojs/vercel` |
@@ -115,7 +115,7 @@ Rules:
 - `<html lang>` and `og:locale` follow the post's language; every post page emits `hreflang` alternates with `x-default` pointing at the Uzbek original.
 - **Sketches** live in `public/sketches/` and are generated; see [Sketches](#sketches).
 - **Media.** Recordings live in `public/media/`. Convert GIFs over a few hundred KB to MP4 (`ffmpeg ... -c:v libx264 -crf 26 -movflags +faststart`) with a poster JPEG, and embed them as `<video autoplay loop muted playsinline>`; the layout script pauses them and shows controls under reduced motion.
-- Outfit has no Cyrillic, so Russian posts are set in Open Sans: `astro.config.mjs` declares it, `BaseLayout` loads it only when `lang="ru"`, and `:root[lang="ru"]` switches `--font-body` (which `--font-sans` reads). Russian OG images use Open Sans too.
+- One font for every language: Jost covers Uzbek (including `oʻ`/`gʻ`), English and Russian, on pages and OG images alike. A replacement must cover Cyrillic too.
 
 Writing style for posts and docs:
 
@@ -243,7 +243,7 @@ sketches["keyset/offset-vs-keyset"] = () => {
 
 - **One URL per page.** `trailingSlash: "never"`: internal links, hreflang, canonical, RSS and the sitemap all omit the trailing slash, and Vercel answers `/path/` with a 308 to `/path`. Build new links with `postUrl()` and never append a slash. `SITE.url` must be the domain Vercel serves without a redirect; canonical URLs that redirect slow down indexing.
 - **Vite dep optimization and View Transitions.** `astro.config.mjs` pre-bundles the `astro/virtual-modules/transitions-*` modules via `vite.optimizeDeps.include`. Without it, Vite discovers them on first load, re-optimizes, and the dev toolbar gets stuck on a 504 "Outdated Optimize Dep" with Astro 7.3 and Vite 8.3. Keep this until a newer Astro or Vite release fixes it, and verify by loading a page and checking that no request returns 504.
-- **The build needs network access.** Astro's Google font provider downloads Outfit at build time, and the OG template fetches it separately for Satori (which needs TTF). The OG endpoint falls back to a system font; the font provider does not.
+- **The build needs network access.** Astro's Google font provider downloads Jost at build time, and the OG template fetches it separately for Satori (which needs TTF). The OG endpoint falls back to a system font; the font provider does not.
 - **Analytics** uses the official `@vercel/analytics/astro` component. It renders a `<vercel-analytics>` custom element, so every client-side navigation swaps in a new one and records a pageview with the route pattern (`/blog/[slug]`), not just the path. Keep it at the end of `<body>`, not in `<head>` as Vercel's docs show: the HTML parser closes `<head>` at the first custom element, which moves the stylesheet and every later head tag into `<body>`. It only reports data when Web Analytics is enabled on the Vercel project; until then its requests 404 harmlessly. In dev it runs in debug mode and logs to the console instead of sending.
 - **The TOC is positioned outside the column.** It sits in the right margin at `xl` and up (`position: absolute; left: 100%`), so it needs the article to be `relative` and the viewport to have room. It is hidden below `xl`.
 

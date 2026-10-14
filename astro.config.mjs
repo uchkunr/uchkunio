@@ -17,21 +17,12 @@ export default defineConfig({
   fonts: [
     {
       provider: fontProviders.google(),
-      name: "Outfit",
-      cssVariable: "--font-outfit",
+      // Jost covers Latin (with Uzbek oʻ and gʻ) and Cyrillic, so one family serves every language.
+      name: "Jost",
+      cssVariable: "--font-jost",
       weights: ["400 600"],
       styles: ["normal"],
-      subsets: ["latin"],
-      fallbacks: ["sans-serif"],
-    },
-    // Outfit has no Cyrillic. Russian posts are set in Open Sans; BaseLayout loads it only there.
-    {
-      provider: fontProviders.google(),
-      name: "Open Sans",
-      cssVariable: "--font-open-sans",
-      weights: ["400 600"],
-      styles: ["normal"],
-      subsets: ["cyrillic", "latin"],
+      subsets: ["latin", "cyrillic"],
       fallbacks: ["sans-serif"],
     },
   ],

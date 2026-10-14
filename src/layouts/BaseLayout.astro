@@ -30,8 +30,7 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
 <html lang={lang}>
   <head>
     <SEOHead {...seo} />
-    <Font cssVariable="--font-outfit" preload />
-    {lang === "ru" && <Font cssVariable="--font-open-sans" preload />}
+    <Font cssVariable="--font-jost" preload />
     <ClientRouter />
     <script is:inline>
       // Before first paint, so the page never flashes the wrong theme.

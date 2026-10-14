@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: var(--font-body), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, -apple-system, sans-serif;
   /* Code only. The system stack, nothing downloaded. */
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
@@ -16,14 +16,6 @@
   --color-ok: var(--ok);
 
   --ease-swift: var(--swift);
-}
-
-/* The body font follows the page language: Outfit, or Open Sans for Russian (Outfit has no Cyrillic). */
-:root {
-  --font-body: var(--font-outfit);
-}
-:root[lang="ru"] {
-  --font-body: var(--font-open-sans);
 }
 
 /* Four greys on a background. Everything on the site is built from these. */
