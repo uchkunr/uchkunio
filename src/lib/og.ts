@@ -1,8 +1,6 @@
-import satori, { type SatoriOptions }
- from "satori";
+import satori, { type SatoriOptions } from "satori";
 import sharp from "sharp";
 import fs from "node:fs";
-import logo from "@/assets/logo.svg?raw";
 
 // Open Graph cards, rendered at build time. Every card shares this size, font and palette
 // (the site's dark theme), so a shared link looks like the site it leads to.
@@ -61,13 +59,16 @@ async function fonts(): Promise<Font[]> {
   );
 }
 
-/** The site logo rasterised at `height` px in `color`, as a PNG data URI for Satori. */
-export async function logoDataUri(height: number, color: string): Promise<{ src: string; width: number; height: number }> {
-  const [, w, h] = logo.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/)!.map(Number);
-  const width = Math.round((height * w) / h);
-  const svg = logo.replace('fill="currentColor"', `fill="${color}"`);
-  const png = await sharp(Buffer.from(svg)).resize(width, height).png().toBuffer();
-  return { src: `data:image/png;base64,${png.toString("base64")}`, width, height };
+/** Fetches an image as a data URI for Satori, or undefined if it can't be had. */
+export async function dataUri(url: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return undefined;
+    const type = res.headers.get("content-type") ?? "image/png";
+    return `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Renders Satori markup to a PNG response. */

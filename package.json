@@ -7,7 +7,6 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "favicons": "node scripts/favicons.ts",
     "sketches": "node scripts/sketches/build.ts",
     "sketches:preview": "node scripts/sketches/preview.ts"
   },
