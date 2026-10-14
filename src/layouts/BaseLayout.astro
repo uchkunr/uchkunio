@@ -242,12 +242,11 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     const W = innerWidth;
     const H = innerHeight;
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
-    const count = Math.round(Math.min(28, Math.max(14, (W * H) / 40000)));
+    const count = Math.round(Math.min(36, Math.max(18, (W * H) / 32000)));
     const flights: Promise<unknown>[] = [];
 
     for (let i = 0; i < count; i++) {
-      // Big enough to read as the logo taking off: 8% to 20% of the short viewport side.
-      const size = rand(0.08, 0.2) * Math.min(W, H);
+      const size = rand(22, 54);
       const hue = rand(0, 360);
       const moth = document.createElement("div");
       moth.innerHTML = `<svg viewBox="${viewBox}" width="${size}" height="${size}" fill="hsl(${hue} 85% 58%)" style="display:block;overflow:visible"><path fill-rule="evenodd" d="${d}"/></svg>`;
@@ -264,7 +263,7 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       const y1 = y0 + Math.sin(angle) * reach;
       const sway = rand(-160, 160);
       const tilt = ((angle * 180) / Math.PI + 90) % 360;
-      const duration = rand(2200, 4000);
+      const duration = rand(1600, 3200);
       const delay = rand(0, 500);
 
       const flight = moth.animate(
