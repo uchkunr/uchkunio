@@ -156,12 +156,17 @@ html[data-vt="theme"]::view-transition-new(root) {
     transform 0.3s var(--swift);
 }
 /* The tree easter egg: a fixed layer the script draws into and removes. */
+/* No viewBox and a 1px box with visible overflow: one SVG unit is always one CSS
+   pixel from the viewport's top-left corner, however the viewport resizes (a phone's
+   address bar collapsing on scroll would otherwise rescale and shift the drawing). */
 .tree {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 45;
-  width: 100%;
-  height: 100%;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
   color: var(--fg);
   pointer-events: none;
 }

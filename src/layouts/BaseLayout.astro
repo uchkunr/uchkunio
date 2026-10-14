@@ -249,7 +249,6 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     const layer = document.createElementNS(SVG, "svg");
     layer.setAttribute("class", "tree");
     layer.setAttribute("aria-hidden", "true");
-    layer.setAttribute("viewBox", `0 0 ${innerWidth} ${innerHeight}`);
 
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
     const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
