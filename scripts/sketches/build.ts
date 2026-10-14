@@ -725,6 +725,84 @@ sketches["event-loop/p99-race"] = () =>
 
 // ---------------------------------------------------------------------------------------------
 
+
+// ringcentral sms --------------------------------------------------------------------------------
+
+sketches["sms/paths"] = () => {
+  const s = new Sketch(880, 400, "Bulk SMS wait in a Postgres queue drained by one Hangfire job per user at 1.6 s per message; direct and first messages go straight to RingCentral and only fall back to the queue on a 429");
+  // Three sources on the left.
+  const sources = [
+    { label: "bulk", sub: "2+ numbers, 202 Accepted", y: 60, fill: FILL.blue, stroke: STROKE.blue },
+    { label: "direct", sub: "1 number, inline", y: 190, fill: FILL.green, stroke: STROKE.green },
+    { label: "first message", sub: "lead assigned, inline", y: 300, fill: FILL.green, stroke: STROKE.green },
+  ];
+  for (const src of sources) {
+    s.rect(30, src.y, 190, 58, { fill: src.fill, stroke: src.stroke });
+    s.text(src.label, 125, src.y + 26, { anchor: "middle", size: 20 });
+    s.text(src.sub, 125, src.y + 48, { anchor: "middle", size: 14, color: MUTED });
+  }
+  // The queue: a Postgres table with the status column.
+  s.rect(300, 40, 230, 100, { fill: FILL.yellow, stroke: INK });
+  s.text("Messages (Postgres)", 415, 68, { anchor: "middle", size: 19 });
+  s.text("SmsStatus = Queued", 415, 94, { anchor: "middle", size: 16 });
+  s.text("FIFO by CreatedAt, per user", 415, 118, { anchor: "middle", size: 14, color: MUTED });
+  // One job per user.
+  s.rect(590, 40, 250, 100, { fill: FILL.violet, stroke: STROKE.violet });
+  s.text("ProcessUserSms(userId)", 715, 68, { anchor: "middle", size: 18 });
+  s.text("200 per slice, 1 sender per user", 715, 94, { anchor: "middle", size: 14, color: MUTED });
+  s.text("sms queue: 5 workers", 715, 118, { anchor: "middle", size: 14, color: MUTED });
+  // RingCentral on the right.
+  s.rect(590, 230, 250, 70, { fill: FILL.gray });
+  s.text("RingCentral", 715, 258, { anchor: "middle", size: 20 });
+  s.text("40 req / user / min", 715, 284, { anchor: "middle", size: 15, color: MUTED });
+  // Flows.
+  s.arrow(220, 89, 300, 89, { stroke: STROKE.blue });
+  s.arrow(530, 89, 590, 89, { stroke: STROKE.blue });
+  s.arrow(715, 140, 715, 230, { stroke: STROKE.blue });
+  s.text("1.6 s apart", 760, 190, { size: 15, color: STROKE.blue });
+  s.arrow(220, 219, 590, 262, { stroke: STROKE.green });
+  s.arrow(220, 329, 590, 282, { stroke: STROKE.green });
+  s.text("skips the queue", 400, 232, { anchor: "middle", size: 15, color: STROKE.green });
+  // The 429 fallback from the direct paths back into the queue.
+  s.arrow(560, 300, 420, 142, { stroke: STROKE.red, dashed: true });
+  s.text("429: back to Queued", 470, 330, { anchor: "middle", size: 15, color: STROKE.red });
+  s.text("Redis: sms:user:{id}:lock and sms:dispatch:{id}, both SET NX EX", 440, 385, { anchor: "middle", size: 14, color: MUTED });
+  return s.toSVG();
+};
+
+sketches["sms/pacing"] = () => {
+  const s = new Sketch(860, 290, "One SMS every 1.6 s is 37.5 per minute under RingCentral's 40; when X-Rate-Limit-Remaining drops to 2 the worker waits out the window before sending again");
+  s.text("one user's sender job, time runs left to right, slowed down 4x", 30, 36, { size: 17, color: MUTED });
+  const x0 = 60;
+  const perSecond = 30; // px per real second: 24 s fit in 720 px
+  const cycle = 6; // animation seconds; real time shown is 24 s
+  const sends: number[] = [];
+  for (let t = 0; t < 9.6; t += 1.6) sends.push(t);
+  const pauseFrom = 11.2;
+  const pauseTo = 21;
+  for (let t = pauseTo + 0.8; t < 24; t += 1.6) sends.push(t);
+  s.line(x0, 150, x0 + 24 * perSecond, 150, { stroke: MUTED, strokeWidth: 1 });
+  const motion: string[] = [];
+  sends.forEach((t, i) => {
+    const x = x0 + t * perSecond;
+    s.group(`class="s${i}"`, (g) => {
+      g.rect(x - 10, 98, 20, 52, { fill: FILL.green, stroke: STROKE.green });
+    });
+    motion.push(during(`s${i}`, cycle, t / 4, cycle));
+  });
+  s.group('class="pause"', (g) => {
+    g.rect(x0 + pauseFrom * perSecond, 98, (pauseTo - pauseFrom) * perSecond, 52, { fill: FILL.red, stroke: STROKE.red, dashed: true });
+    g.text("Remaining = 2: wait Window + 2 s", x0 + ((pauseFrom + pauseTo) / 2) * perSecond, 84, { anchor: "middle", size: 15, color: STROKE.red });
+  });
+  motion.push(during("pause", cycle, pauseFrom / 4, cycle));
+  s.text("1.6 s", x0 + 0.8 * perSecond, 180, { anchor: "middle", size: 15, color: MUTED });
+  s.line(x0, 160, x0 + 1.6 * perSecond, 160, { stroke: MUTED, strokeWidth: 1 });
+  s.text("37.5 / min, under the 40 / min limit", x0, 225, { size: 17, color: STROKE.green });
+  s.text("429 is never retried inline: the job reschedules itself once", x0, 258, { size: 15, color: MUTED });
+  return s.toSVG(motion.join(""), ".pause { opacity: 1; }");
+};
+
+// Write everything registered above. Keep this at the end of the file.
 const only = process.argv[2];
 for (const [name, draw] of Object.entries(sketches)) {
   if (only && !name.startsWith(only)) continue;
