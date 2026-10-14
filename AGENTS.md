@@ -77,6 +77,8 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | Header: nav, theme toggle, reading title, progress line | `src/components/Header.astro` |
 | Footer: RSS and source link | `src/components/Footer.astro` |
 | Post rows shared by home, blog, and tag pages | `src/components/PostList.astro` |
+| Logo (the moth) | `src/assets/logo.svg`, a traced single-path SVG in `currentColor`. Inlined in `Header.astro` through Astro's SVG import; `logoDataUri()` in `src/lib/og.ts` rasterises it for the OG cards |
+| Favicons | Generated into `public/` from the logo by `pnpm favicons` (`scripts/favicons.ts`): `favicon.svg` follows the system theme, the PNGs and `.ico` are white tiles. Never edit them by hand |
 | Icons | `@lucide/astro` components, inlined as SVG at build time (`stroke-width={1.75}`, `aria-hidden="true"`) |
 | Meta, Open Graph, Twitter tags | `src/components/SEOHead.astro` |
 | Breadcrumb JSON-LD | `src/components/Breadcrumbs.astro` |
@@ -195,6 +197,7 @@ Conventional Commits, split by purpose: `content: add a post on ...` for the Uzb
 Hand-drawn SVG diagrams in the Excalidraw style, generated from code: `scripts/sketches/lib.ts` (rough.js strokes, Excalidraw's Virgil font with glyphs as paths) and `scripts/sketches/build.ts` (one function per sketch).
 
 ```bash
+pnpm favicons                 # regenerate every favicon in public/ from src/assets/logo.svg
 pnpm sketches                 # every sketch into public/sketches/<post>/<name>.svg
 pnpm sketches keyset          # only names starting with "keyset"
 pnpm sketches:preview keyset  # PNG previews in <tmpdir>/sketches-preview, read them before committing
@@ -244,7 +247,7 @@ sketches["keyset/offset-vs-keyset"] = () => {
 
 - **One URL per page.** `trailingSlash: "never"`: internal links, hreflang, canonical, RSS and the sitemap all omit the trailing slash, and Vercel answers `/path/` with a 308 to `/path`. Build new links with `postUrl()` and never append a slash. `SITE.url` must be the domain Vercel serves without a redirect; canonical URLs that redirect slow down indexing.
 - **Vite dep optimization and View Transitions.** `astro.config.mjs` pre-bundles the `astro/virtual-modules/transitions-*` modules via `vite.optimizeDeps.include`. Without it, Vite discovers them on first load, re-optimizes, and the dev toolbar gets stuck on a 504 "Outdated Optimize Dep" with Astro 7.3 and Vite 8.3. Keep this until a newer Astro or Vite release fixes it, and verify by loading a page and checking that no request returns 504.
-- **The build needs network access.** Astro's Google font provider downloads Jost at build time, and `src/lib/og.ts` fetches it separately for Satori (which needs TTF), plus the GitHub avatar for the default card. The OG cards fall back to a system font and drop the avatar; the font provider has no fallback.
+- **The build needs network access.** Astro's Google font provider downloads Jost at build time, and `src/lib/og.ts` fetches it separately for Satori (which needs TTF). The OG cards fall back to a system font; the font provider has no fallback.
 - **Analytics** uses the official `@vercel/analytics/astro` component. It renders a `<vercel-analytics>` custom element, so every client-side navigation swaps in a new one and records a pageview with the route pattern (`/blog/[slug]`), not just the path. Keep it at the end of `<body>`, not in `<head>` as Vercel's docs show: the HTML parser closes `<head>` at the first custom element, which moves the stylesheet and every later head tag into `<body>`. It only reports data when Web Analytics is enabled on the Vercel project; until then its requests 404 harmlessly. In dev it runs in debug mode and logs to the console instead of sending.
 - **The TOC is a rail on the right edge.** `position: fixed`, one dash per `h2`/`h3`, visible from `md` up (below that there is no margin for it). Hover, keyboard focus or a tap on the rail opens the full list; the links stay focusable while it is closed (opacity, not `visibility`), so tabbing into one opens it. The active heading is the last one past the upper third of the viewport. The back-to-top button sits in the bottom-right corner and is `inert` until the reader is a screen into the post.
 

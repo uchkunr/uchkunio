@@ -1,20 +1,17 @@
 export const prerender = true;
 import { html } from "satori-html";
 import { SITE } from "@/config/site";
-import { COLORS, FAMILY, HEIGHT, WIDTH, dataUri, renderCard } from "@/lib/og";
+import { COLORS, FAMILY, HEIGHT, WIDTH, logoDataUri, renderCard } from "@/lib/og";
 
 // The card for every page that isn't a post: the home page, the blog index, tags.
 // Same frame as the post cards, with the person in place of a post title.
-const AVATAR = "https://avatars.githubusercontent.com/u/105480357?v=4&s=192";
 const STACK = ["TypeScript", "Node.js", "PostgreSQL", "Distributed systems"];
 
 export async function GET() {
-  const avatar = await dataUri(AVATAR);
-  const lead = avatar
-    ? `<img src="${avatar}" width="88" height="88" style="border-radius:44px;border:2px solid ${COLORS.line}" />`
-    : `<span>${SITE.name}</span>`;
+  const logo = await logoDataUri(56, COLORS.fg);
+  const lead = `<img src="${logo.src}" width="${logo.width}" height="${logo.height}" />`;
 
-  // A plain string, not html``: that escapes interpolations, and the avatar is markup.
+  // A plain string, not html``: that escapes interpolations, and the logo is markup.
   // Every value here is the site's own.
   return renderCard(html(`
     <div

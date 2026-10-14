@@ -40,7 +40,8 @@ const ogImageUrl = new URL(ogImage, SITE.url).href;
 <link rel="canonical" href={canonical} />
 {alternates.map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={new URL(alt.href, SITE.url).href} />)}
 
-<!-- Favicons -->
+<!-- Favicons: the SVG follows the system theme; the PNGs and .ico are the fallbacks. -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

@@ -1,5 +1,6 @@
 ---
 import { Moon, Sun } from "@lucide/astro";
+import Logo from "@/assets/logo.svg";
 
 interface Props {
   /** Replaces the site name once the page's own heading scrolls out of view. */
@@ -13,7 +14,10 @@ const onWriting = Astro.url.pathname.startsWith("/blog");
 <header class="header" data-header>
   <div class="mx-auto flex h-14 max-w-[40rem] items-center justify-between gap-6 px-6">
     <div class="header-title">
-      <a href="/" class="header-name text-[0.95rem] font-medium tracking-[-0.01em]">Uchkun Rakhimov</a>
+      <a href="/" class="header-name inline-flex items-center gap-2.5 text-[0.95rem] font-medium tracking-[-0.01em]">
+        <Logo class="header-logo" aria-hidden="true" />
+        Uchkun Rakhimov
+      </a>
       {title && <span class="header-post" aria-hidden="true">{title}</span>}
     </div>
 

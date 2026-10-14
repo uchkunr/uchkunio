@@ -155,6 +155,11 @@ html[data-vt="theme"]::view-transition-new(root) {
     opacity 0.3s var(--swift),
     transform 0.3s var(--swift);
 }
+.header-logo {
+  flex: none;
+  height: 1.1rem;
+  width: auto;
+}
 .header-post {
   overflow: hidden;
   white-space: nowrap;
