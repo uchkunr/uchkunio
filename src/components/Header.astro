@@ -14,10 +14,12 @@ const onWriting = Astro.url.pathname.startsWith("/blog");
 <header class="header" data-header>
   <div class="mx-auto flex h-14 max-w-[40rem] items-center justify-between gap-6 px-6">
     <div class="header-title">
-      <a href="/" class="header-name inline-flex items-center gap-2.5 text-[0.95rem] font-medium tracking-[-0.01em]">
-        <Logo class="header-logo" aria-hidden="true" />
-        Uchkun Rakhimov
-      </a>
+      <span class="header-name inline-flex items-center gap-1.5 text-[0.95rem] font-medium tracking-[-0.01em]">
+        <button type="button" class="header-logo-btn" data-moths aria-label="Release the moths">
+          <Logo class="header-logo" aria-hidden="true" />
+        </button>
+        <a href="/">Uchkun Rakhimov</a>
+      </span>
       {title && <span class="header-post" aria-hidden="true">{title}</span>}
     </div>
 

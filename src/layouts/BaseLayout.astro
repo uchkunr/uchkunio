@@ -227,6 +227,74 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     history.replaceState(null, "", location.pathname + location.search);
   });
 
+  // ── Moths: click the logo and a swarm takes off across the page ─────
+  // Colourful on purpose: this is the one place the palette is allowed to break.
+  // Nothing exists until the click, and reduced motion skips it entirely.
+  function releaseMoths(logo: SVGSVGElement) {
+    if (reducedMotion() || document.querySelector(".moths")) return;
+    const viewBox = logo.getAttribute("viewBox") ?? "0 0 32 32";
+    const d = logo.querySelector("path")?.getAttribute("d");
+    if (!d) return;
+
+    const layer = document.createElement("div");
+    layer.className = "moths";
+    layer.setAttribute("aria-hidden", "true");
+    const W = innerWidth;
+    const H = innerHeight;
+    const rand = (a: number, b: number) => a + Math.random() * (b - a);
+    const count = Math.round(Math.min(36, Math.max(18, (W * H) / 32000)));
+    const flights: Promise<unknown>[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const size = rand(22, 54);
+      const hue = rand(0, 360);
+      const moth = document.createElement("div");
+      moth.innerHTML = `<svg viewBox="${viewBox}" width="${size}" height="${size}" fill="hsl(${hue} 85% 58%)" style="display:block;overflow:visible"><path fill-rule="evenodd" d="${d}"/></svg>`;
+      const wings = moth.firstElementChild as SVGSVGElement;
+      layer.append(moth);
+
+      // Take off from a random spot on the page and leave through a random edge,
+      // drifting sideways on the way, like a moth that has just noticed the light.
+      const x0 = rand(0, W);
+      const y0 = rand(0, H);
+      const angle = rand(0, Math.PI * 2);
+      const reach = Math.hypot(W, H) * 0.7;
+      const x1 = x0 + Math.cos(angle) * reach;
+      const y1 = y0 + Math.sin(angle) * reach;
+      const sway = rand(-160, 160);
+      const tilt = ((angle * 180) / Math.PI + 90) % 360;
+      const duration = rand(1600, 3200);
+      const delay = rand(0, 500);
+
+      const flight = moth.animate(
+        [
+          { transform: `translate(${x0}px, ${y0}px) rotate(${tilt}deg) scale(0.4)`, opacity: 0 },
+          { transform: `translate(${x0 + sway * 0.3}px, ${y0 - 30}px) rotate(${tilt - 12}deg) scale(1)`, opacity: 1, offset: 0.15 },
+          { transform: `translate(${(x0 + x1) / 2 + sway}px, ${(y0 + y1) / 2}px) rotate(${tilt + 15}deg) scale(1)`, opacity: 1, offset: 0.6 },
+          { transform: `translate(${x1}px, ${y1}px) rotate(${tilt}deg) scale(0.8)`, opacity: 0 },
+        ],
+        { duration, delay, easing: "cubic-bezier(0.4, 0, 0.6, 1)", fill: "forwards" },
+      );
+      // Wing beat: the silhouette squeezes horizontally around its own centre.
+      wings.animate(
+        [{ transform: "scaleX(1)" }, { transform: "scaleX(0.25)" }, { transform: "scaleX(1)" }],
+        { duration: rand(110, 190), iterations: Infinity, easing: "ease-in-out" },
+      );
+      flights.push(flight.finished);
+    }
+
+    document.body.append(layer);
+    Promise.allSettled(flights).then(() => layer.remove());
+  }
+
+  document.addEventListener("click", (event) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>("[data-moths]");
+    const logo = button?.querySelector("svg");
+    if (logo) releaseMoths(logo);
+  });
+  // A navigation mid-flight would leave the layer behind.
+  document.addEventListener("astro:before-swap", () => document.querySelector(".moths")?.remove());
+
   document.addEventListener("click", (event) => {
     const link = (event.target as Element).closest<HTMLAnchorElement>("[data-toc] a[href^='#']");
     if (!link) return;

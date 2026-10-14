@@ -155,10 +155,37 @@ html[data-vt="theme"]::view-transition-new(root) {
     opacity 0.3s var(--swift),
     transform 0.3s var(--swift);
 }
-.header-logo {
+.header-logo-btn {
+  display: grid;
+  place-items: center;
   flex: none;
+  margin: -0.75rem -0.25rem -0.75rem -0.5rem;
+  padding: 0.75rem 0.25rem 0.75rem 0.5rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.header-logo {
   height: 1.1rem;
   width: auto;
+  transition: transform 0.3s var(--swift);
+}
+.header-logo-btn:hover .header-logo {
+  transform: scale(1.12);
+}
+
+/* The moth easter egg: a fixed layer the script fills and removes. */
+.moths {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: none;
+}
+.moths > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
 }
 .header-post {
   overflow: hidden;
