@@ -124,11 +124,19 @@ html[data-vt="theme"]::view-transition-new(root) {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Frosted glass: translucent enough for the page to show through, blurred and
+     saturated so it reads as colour rather than noise. Only the standard property is
+     written: Lightning CSS adds the -webkit- one for Safari, and when both were written
+     by hand it kept only the prefixed one, which Chrome ignores. */
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid transparent;
   transition: border-color 0.3s;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .header {
+    background: var(--bg);
+  }
 }
 .header.is-scrolled {
   border-color: var(--line);
