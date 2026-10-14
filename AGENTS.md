@@ -44,7 +44,7 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | --- | --- | --- |
 | `/` | `src/pages/index.astro` | Bio, latest posts, links. Person and WebSite JSON-LD |
 | `/blog` | `src/pages/blog/index.astro` | Posts grouped by year, client-side search (`/` focuses it) and tag filter; both combine and live in the URL (`?q=`, `?tag=`) |
-| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page (Uzbek original): title moves into the header on scroll, progress line, TOC at `xl` and up, code copy, prev/next, language links |
+| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page (Uzbek original): title moves into the header on scroll, progress line, TOC rail from `md` up, back-to-top button, code copy, prev/next, language links |
 | `/en/blog/[slug]`, `/ru/blog/[slug]` | `src/pages/[lang]/blog/[slug].astro` | Translated post page, same `PostLayout`, prev/next within the language |
 | `/blog/tags/[tag]` | `src/pages/blog/tags/[tag].astro` | Posts filtered by tag |
 | `/og.png` | `src/pages/og.png.ts` | 1200x630 default OG image for every page that isn't a post: avatar, name, role |
@@ -246,7 +246,7 @@ sketches["keyset/offset-vs-keyset"] = () => {
 - **Vite dep optimization and View Transitions.** `astro.config.mjs` pre-bundles the `astro/virtual-modules/transitions-*` modules via `vite.optimizeDeps.include`. Without it, Vite discovers them on first load, re-optimizes, and the dev toolbar gets stuck on a 504 "Outdated Optimize Dep" with Astro 7.3 and Vite 8.3. Keep this until a newer Astro or Vite release fixes it, and verify by loading a page and checking that no request returns 504.
 - **The build needs network access.** Astro's Google font provider downloads Jost at build time, and `src/lib/og.ts` fetches it separately for Satori (which needs TTF), plus the GitHub avatar for the default card. The OG cards fall back to a system font and drop the avatar; the font provider has no fallback.
 - **Analytics** uses the official `@vercel/analytics/astro` component. It renders a `<vercel-analytics>` custom element, so every client-side navigation swaps in a new one and records a pageview with the route pattern (`/blog/[slug]`), not just the path. Keep it at the end of `<body>`, not in `<head>` as Vercel's docs show: the HTML parser closes `<head>` at the first custom element, which moves the stylesheet and every later head tag into `<body>`. It only reports data when Web Analytics is enabled on the Vercel project; until then its requests 404 harmlessly. In dev it runs in debug mode and logs to the console instead of sending.
-- **The TOC is positioned outside the column.** It sits in the right margin at `xl` and up (`position: absolute; left: 100%`), so it needs the article to be `relative` and the viewport to have room. It is hidden below `xl`.
+- **The TOC is a rail on the right edge.** `position: fixed`, one dash per `h2`/`h3`, visible from `md` up (below that there is no margin for it). Hover, keyboard focus or a tap on the rail opens the full list; the links stay focusable while it is closed (opacity, not `visibility`), so tabbing into one opens it. The active heading is the last one past the upper third of the viewport. The back-to-top button sits in the bottom-right corner and is `inert` until the reader is a screen into the post.
 
 ## Before you finish a change
 

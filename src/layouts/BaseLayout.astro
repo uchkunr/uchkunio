@@ -170,11 +170,19 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     const toc = document.querySelector<HTMLElement>("[data-toc]");
     if (!toc) return;
     const links = [...toc.querySelectorAll<HTMLAnchorElement>("a[href^='#']")];
-    const marker = toc.querySelector<HTMLElement>("[data-toc-marker]");
+    const dashes = [...toc.querySelectorAll<HTMLElement>("[data-toc-rail] span")];
+    type Target = { link: HTMLAnchorElement; dash?: HTMLElement; el: HTMLElement };
     const targets = links
-      .map((link) => ({ link, el: document.getElementById(decodeURIComponent(link.hash.slice(1))) }))
-      .filter((t): t is { link: HTMLAnchorElement; el: HTMLElement } => t.el !== null);
+      .map((link, i) => ({ link, dash: dashes[i], el: document.getElementById(decodeURIComponent(link.hash.slice(1))) }))
+      .filter((t): t is Target => t.el !== null);
     if (!targets.length) return;
+
+    // Touch screens have no hover: a tap on the rail opens the list, a tap anywhere else closes it.
+    const close = (event: Event) => {
+      if (!toc.contains(event.target as Node)) toc.classList.remove("is-open");
+    };
+    document.addEventListener("click", close);
+    cleanups.push(() => document.removeEventListener("click", close));
 
     onScroll(() => {
       // Active = the last heading that has crossed the upper third of the viewport.
@@ -183,13 +191,35 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
         if (t.el.getBoundingClientRect().top > innerHeight * 0.33) break;
         active = t;
       }
-      for (const t of targets) t.link.classList.toggle("is-active", t === active);
-      if (marker) {
-        marker.style.transform = `translateY(${active.link.offsetTop}px)`;
-        marker.style.height = `${active.link.offsetHeight}px`;
+      for (const t of targets) {
+        t.link.classList.toggle("is-active", t === active);
+        t.dash?.classList.toggle("is-active", t === active);
       }
     });
   }
+
+  document.addEventListener("click", (event) => {
+    const toc = (event.target as Element).closest("[data-toc-rail]")?.closest("[data-toc]");
+    toc?.classList.toggle("is-open");
+  });
+
+  // ── Back to top ─────────────────────────────────────────────────────
+  function initToTop() {
+    const button = document.querySelector<HTMLButtonElement>("[data-to-top]");
+    if (!button) return;
+    onScroll(() => {
+      const visible = scrollY > innerHeight;
+      button.classList.toggle("is-visible", visible);
+      // Inert while hidden: out of the tab order and away from screen readers.
+      button.inert = !visible;
+    });
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target as Element).closest("[data-to-top]")) return;
+    scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
+    history.replaceState(null, "", location.pathname + location.search);
+  });
 
   document.addEventListener("click", (event) => {
     const link = (event.target as Element).closest<HTMLAnchorElement>("[data-toc] a[href^='#']");
@@ -199,6 +229,7 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     event.preventDefault();
     target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth" });
     history.replaceState(null, "", link.hash);
+    link.closest("[data-toc]")?.classList.remove("is-open");
   });
 
   // ── Code blocks and tables ──────────────────────────────────────────
@@ -251,6 +282,7 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
     initHeader();
     initLists();
     initToc();
+    initToTop();
     initProse();
   });
 </script>

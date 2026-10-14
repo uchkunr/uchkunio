@@ -63,7 +63,7 @@ const articleSchema = {
   <Breadcrumbs items={[{ name: "Writing", href: "/blog" }, { name: post.data.title, href: url }]} />
 
   <div class="mx-auto max-w-[40rem] px-6 pt-10 pb-20 sm:pt-16">
-    <article class="relative" data-article>
+    <article data-article>
       <a href="/blog" class="quiet inline-flex items-center gap-1.5 text-sm" data-reveal style="--i: 0">
         <Icon name="arrow-left" size={14} />
         Writing
@@ -149,23 +149,29 @@ const articleSchema = {
         )
       }
 
-      {
-        toc.length > 2 && (
-          <aside class="toc hidden xl:block" data-toc>
-            <div class="toc-inner">
-              <p class="mb-3 text-[0.75rem] font-medium text-fg-3">On this page</p>
-              <nav class="toc-list" aria-label="Table of contents">
-                <span class="toc-marker" data-toc-marker aria-hidden="true" />
-                {toc.map((h) => (
-                  <a href={`#${h.slug}`} data-depth={h.depth}>
-                    {h.text}
-                  </a>
-                ))}
-              </nav>
-            </div>
-          </aside>
-        )
-      }
     </article>
   </div>
+
+  {
+    toc.length > 2 && (
+      <nav class="toc" data-toc aria-label="Table of contents">
+        <div class="toc-rail" data-toc-rail aria-hidden="true">
+          {toc.map((h) => (
+            <span data-depth={h.depth} />
+          ))}
+        </div>
+        <div class="toc-panel">
+          {toc.map((h) => (
+            <a href={`#${h.slug}`} data-depth={h.depth}>
+              {h.text}
+            </a>
+          ))}
+        </div>
+      </nav>
+    )
+  }
+
+  <button type="button" class="to-top" data-to-top aria-label="Back to top" inert>
+    <Icon name="arrow-up" size={16} />
+  </button>
 </BaseLayout>
