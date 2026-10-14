@@ -2,7 +2,7 @@
 import { render } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
-import { ArrowLeft, ArrowUp } from "@lucide/astro";
+import { ArrowLeft, ArrowRight, ArrowUp, Tag } from "@lucide/astro";
 import { SITE } from "@/config/site";
 import { formatDate } from "@/lib/date";
 import {
@@ -122,7 +122,7 @@ const articleSchema = {
       </div>
 
       <footer class="mt-12 flex flex-wrap items-center gap-2">
-        <span class="mr-1 text-sm text-fg-3">Tagged</span>
+        <span class="mr-1 inline-flex items-center gap-1.5 text-sm text-fg-3"><Tag size={14} stroke-width={1.75} aria-hidden="true" />Tagged</span>
         {post.data.tags.map((tag) => <a href={`/blog/tags/${tag}`} class="tag">{tag}</a>)}
       </footer>
 
@@ -131,7 +131,7 @@ const articleSchema = {
           <nav class="pager" aria-label="More posts">
             {older ? (
               <a href={postUrl(older)}>
-                <span class="meta">Older</span>
+                <span class="meta inline-flex items-center gap-1"><ArrowLeft size={14} stroke-width={1.75} aria-hidden="true" />Older</span>
                 <span class="pager-title text-balance">{older.data.title}</span>
               </a>
             ) : (
@@ -139,7 +139,7 @@ const articleSchema = {
             )}
             {newer ? (
               <a href={postUrl(newer)} class="sm:items-end sm:text-right">
-                <span class="meta">Newer</span>
+                <span class="meta inline-flex items-center gap-1">Newer<ArrowRight size={14} stroke-width={1.75} aria-hidden="true" /></span>
                 <span class="pager-title text-balance">{newer.data.title}</span>
               </a>
             ) : (

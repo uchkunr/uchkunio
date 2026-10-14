@@ -3,7 +3,7 @@ export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import PostList from "@/components/PostList.astro";
-import { ArrowLeft } from "@lucide/astro";
+import { ArrowLeft, Tag } from "@lucide/astro";
 import { getPosts } from "@/lib/posts";
 
 export async function getStaticPaths() {
@@ -29,7 +29,7 @@ const { tag, posts } = Astro.props;
 
     <header class="mt-8 flex items-baseline justify-between" data-reveal style="--i: 1">
       <h1 class="text-[1.6rem] font-semibold tracking-[-0.02em]">
-        <span class="text-fg-3">Tagged</span> {tag}
+        <Tag class="mr-1 inline-block align-[-0.1em] text-fg-3" size={20} stroke-width={1.75} aria-hidden="true" /><span class="text-fg-3">Tagged</span> {tag}
       </h1>
       <p class="meta">{posts.length} {posts.length === 1 ? "post" : "posts"}</p>
     </header>
