@@ -1,5 +1,5 @@
 ---
-title: "SMS through RingCentral: zero 429s with BullMQ, a direct message leaves in 0.5 s ahead of 5000 bulk"
+title: "How to balance millions of SMS through RingCentral: one BullMQ queue per account, priority and no 429s"
 date: "2026-10-14"
 excerpt: "With bulk sent at a 1.6 s interval and direct bypassing the queue, 2 of 5 direct messages got a 429 and ended up behind 4963 bulk rows. One BullMQ queue per account, priority and a one-request-per-1.67 s limiter: zero 429s, direct left in 0.5 s, none of 5005 jobs lost."
 tags:

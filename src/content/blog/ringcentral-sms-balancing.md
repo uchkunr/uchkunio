@@ -1,5 +1,5 @@
 ---
-title: "RingCentral orqali SMS: BullMQ bilan 429 yo'q, direct xabar 5000 ta bulk oldidan 0.5 soniyada ketadi"
+title: "RingCentral orqali millionlab SMS'ni qanday balanslash mumkin: har akkauntga bitta BullMQ navbati, priority va 429 siz"
 date: "2026-10-14"
 excerpt: "Bulk 1.6 soniya oraliq bilan, direct esa navbatsiz yuborilganda 5 ta direct'dan 2 tasi 429 oldi va 4963 ta bulk orqasida qoldi. Har akkauntga bitta BullMQ navbati, priority va 1.67 soniyada bitta so'rov limiter'i: 429 nol, direct 0.5 soniyada ketdi, 5005 job'dan birortasi yo'qolmadi."
 tags:
