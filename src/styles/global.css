@@ -183,6 +183,8 @@ html[data-vt="theme"]::view-transition-new(root) {
 .is-reading .header-post {
   opacity: 1;
   transform: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 .header-progress {
   position: absolute;
