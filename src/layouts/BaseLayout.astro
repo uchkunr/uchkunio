@@ -228,12 +228,24 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
   });
 
   // ── Sprouts: click the name and twigs and leaves grow out of the letters ──
-  // The first click draws them and holds them; a second click, or a
-  // navigation, clears them. The link itself still goes home.
+  // Every click grows a different plant around the visible title. The name is
+  // still a link home: the plant grows there once the page has arrived.
   const SVG = "http://www.w3.org/2000/svg";
 
+  /** The box of the text itself, not of its element (which a grid or flex can stretch). */
+  function textRect(el: HTMLElement): DOMRect {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const text = range.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    // Clamp to the element: an ellipsised title's text runs past its visible edge.
+    const left = Math.max(text.left, box.left);
+    const right = Math.min(text.right, box.right);
+    return new DOMRect(left, text.top, Math.max(0, right - left), text.height);
+  }
+
   function growTree(from: HTMLElement) {
-    const rect = from.getBoundingClientRect();
+    const rect = textRect(from);
     const layer = document.createElementNS(SVG, "svg");
     layer.setAttribute("class", "tree");
     layer.setAttribute("aria-hidden", "true");
@@ -241,11 +253,16 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
 
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
     const STEM = 360; // ms to draw one stem
+    // Every click grows a different plant: its own density, reach and leaf size.
+    const density = rand(7, 12);
+    const reach = rand(0.8, 1.25);
+    const leafScale = rand(0.85, 1.2);
     let last = 0;
 
     // A leaf: a blade of two bowed sides meeting at the tip, a vein in the page
     // colour down the middle, unfurling from its base with a small twist.
     function leaf(g: SVGGElement, x: number, y: number, angle: number, size: number, side: number, at: number) {
+      size *= leafScale;
       const tipX = x + Math.cos(angle) * size;
       const tipY = y + Math.sin(angle) * size;
       const nx = Math.cos(angle + Math.PI / 2) * size * 0.4;
@@ -306,10 +323,19 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       }
     }
 
-    // Sprouts along the text, alternating above and below the letters, leaning
-    // outward from the middle. Each one is a group so it can sway from its base.
-    const count = Math.min(24, Math.max(8, Math.round(rect.width / 9)));
+    // One sprout: a group rooted at (x, y) so it can sway from its base.
     const sprouts: SVGGElement[] = [];
+    function sprout(x: number, y: number, angle: number, length: number, at: number) {
+      const g = document.createElementNS(SVG, "g");
+      g.style.transformOrigin = `${x}px ${y}px`;
+      layer.append(g);
+      sprouts.push(g);
+      stem(g, x, y, angle, length, at, Math.random() < 0.6 ? 1 : 0);
+    }
+
+    // Sprouts ring the text: along the top and bottom edges, leaning outward from
+    // the middle, and a few from each end. The ones above stay inside the viewport.
+    const count = Math.min(24, Math.max(6, Math.round(rect.width / density)));
     for (let i = 0; i < count; i++) {
       const t = (i + 0.5) / count;
       const x = rect.left + rect.width * t + rand(-3, 3);
@@ -317,13 +343,18 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       const y = up ? rect.top + 3 : rect.bottom - 3;
       const lean = (t - 0.5) * 1.2 + rand(-0.25, 0.25);
       const angle = up ? -Math.PI / 2 + lean : Math.PI / 2 + lean;
-      let length = rand(18, 34);
+      let length = rand(18, 34) * reach;
       if (up) length = Math.min(length, Math.max(8, rect.top - 6));
-      const g = document.createElementNS(SVG, "g");
-      g.style.transformOrigin = `${x}px ${y}px`;
-      layer.append(g);
-      sprouts.push(g);
-      stem(g, x, y, angle, length, i * 70 + rand(0, 80), Math.random() < 0.6 ? 1 : 0);
+      sprout(x, y, angle, length, i * 70 + rand(0, 80));
+    }
+    for (const side of [-1, 1]) {
+      const x = side < 0 ? rect.left + 1 : rect.right - 1;
+      const ends = Math.random() < 0.5 ? 2 : 3;
+      for (let i = 0; i < ends; i++) {
+        const y = rect.top + rect.height * ((i + 0.5) / ends);
+        const angle = (side < 0 ? Math.PI : 0) + rand(-0.6, 0.6);
+        sprout(x, y, angle, rand(16, 30) * reach, rand(100, 600));
+      }
     }
     document.body.append(layer);
 
@@ -341,13 +372,11 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
 
     // Hold the finished sprouts for a while, then let them go on their own.
     setTimeout(() => {
-      if (document.querySelector(".tree") === layer) clearTree();
+      if (!layer.classList.contains("is-fading")) clearTree(layer);
     }, last + 3000);
   }
 
-  function clearTree() {
-    const layer = document.querySelector<SVGSVGElement>(".tree");
-    if (!layer || layer.classList.contains("is-fading")) return false;
+  function clearTree(layer: SVGSVGElement) {
     layer.classList.add("is-fading");
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
     // The leaves let go and drift down, turning as they fall; the stems fade behind them.
@@ -364,22 +393,39 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       stem.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 700, delay: 300, easing: "ease-out", fill: "forwards" });
     });
     setTimeout(() => layer.remove(), 1750);
-    return true;
   }
 
+  /** Lets any standing plant go and grows a fresh one from `from`. */
+  function replant(from: HTMLElement) {
+    document.querySelectorAll<SVGSVGElement>(".tree:not(.is-fading)").forEach(clearTree);
+    growTree(from);
+  }
+
+  const SPROUT_ON_ARRIVAL = "sprout";
   document.addEventListener("click", (event) => {
     const title = (event.target as Element).closest<HTMLElement>("[data-tree]");
     if (!title || reducedMotion()) return;
-    if (document.querySelector(".tree")) {
-      clearTree();
-      return; // the second click is the ordinary link, where there is one
+    const link = (event.target as Element).closest("a");
+    if (link) {
+      // The name goes home as a link should; the plant grows there on arrival.
+      // On the home page itself there is nowhere to go, so it grows right away.
+      if (location.pathname === "/") {
+        event.preventDefault();
+        replant(link);
+      } else {
+        sessionStorage.setItem(SPROUT_ON_ARRIVAL, "1");
+      }
+      return;
     }
-    if ((event.target as Element).closest("a")) event.preventDefault();
-    // Sprout from whichever text is showing: the name, or the post title once reading.
     const post = title.querySelector<HTMLElement>(".header-post");
-    const reading = title.closest("[data-header]")?.classList.contains("is-reading");
-    growTree((reading && post) || title.querySelector<HTMLElement>(".header-name") || title);
+    if (post) replant(post);
   }, true); // capture: before the router's own click listener, which honours preventDefault
+  document.addEventListener("astro:page-load", () => {
+    if (!sessionStorage.getItem(SPROUT_ON_ARRIVAL)) return;
+    sessionStorage.removeItem(SPROUT_ON_ARRIVAL);
+    const name = document.querySelector<HTMLElement>(".header-name");
+    if (name && !reducedMotion()) setTimeout(() => replant(name), 250);
+  });
   document.addEventListener("astro:before-swap", () => document.querySelector(".tree")?.remove());
 
   document.addEventListener("click", (event) => {
