@@ -2,7 +2,7 @@
 import { render } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
-import Icon from "@/components/Icon.astro";
+import { ArrowLeft, ArrowUp } from "@lucide/astro";
 import { SITE } from "@/config/site";
 import { formatDate } from "@/lib/date";
 import {
@@ -65,7 +65,7 @@ const articleSchema = {
   <div class="mx-auto max-w-[40rem] px-6 pt-10 pb-20 sm:pt-16">
     <article data-article>
       <a href="/blog" class="quiet inline-flex items-center gap-1.5 text-sm" data-reveal style="--i: 0">
-        <Icon name="arrow-left" size={14} />
+        <ArrowLeft size={14} stroke-width={1.75} aria-hidden="true" />
         Writing
       </a>
 
@@ -172,6 +172,6 @@ const articleSchema = {
   }
 
   <button type="button" class="to-top" data-to-top aria-label="Back to top" inert>
-    <Icon name="arrow-up" size={16} />
+    <ArrowUp size={20} stroke-width={1.75} aria-hidden="true" />
   </button>
 </BaseLayout>

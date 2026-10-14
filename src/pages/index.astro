@@ -2,7 +2,7 @@
 export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PostList from "@/components/PostList.astro";
-import Icon from "@/components/Icon.astro";
+import { ArrowUpRight } from "@lucide/astro";
 import { SITE, SOCIAL_LINKS } from "@/config/site";
 import { getPosts } from "@/lib/posts";
 
@@ -90,7 +90,7 @@ const websiteSchema = {
                 <span class="row-title">{link.label}</span>
                 <span class="row-meta flex items-center gap-2 font-sans text-sm">
                   {link.handle}
-                  <Icon name="arrow-up-right" size={14} class="row-arrow" />
+                  <ArrowUpRight size={14} stroke-width={1.75} class="row-arrow" aria-hidden="true" />
                 </span>
               </a>
             </li>

@@ -1,4 +1,6 @@
 ---
+import { Code, Rss } from "@lucide/astro";
+
 const year = new Date().getFullYear();
 ---
 
@@ -6,8 +8,8 @@ const year = new Date().getFullYear();
   <div class="mx-auto flex max-w-[40rem] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-10 text-[0.8rem] text-fg-3">
     <p>&copy; {year} Uchkun Rakhimov</p>
     <div class="flex items-center gap-5">
-      <a href="/rss.xml" class="quiet">RSS</a>
-      <a href="https://github.com/uchkunr/uchkunio" class="quiet" target="_blank" rel="noopener noreferrer">Source</a>
+      <a href="/rss.xml" class="quiet inline-flex items-center gap-1.5"><Rss size={14} stroke-width={1.75} aria-hidden="true" />RSS</a>
+      <a href="https://github.com/uchkunr/uchkunio" class="quiet inline-flex items-center gap-1.5" target="_blank" rel="noopener noreferrer"><Code size={14} stroke-width={1.75} aria-hidden="true" />Source</a>
     </div>
   </div>
 </footer>

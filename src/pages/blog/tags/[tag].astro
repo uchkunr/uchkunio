@@ -3,7 +3,7 @@ export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import PostList from "@/components/PostList.astro";
-import Icon from "@/components/Icon.astro";
+import { ArrowLeft } from "@lucide/astro";
 import { getPosts } from "@/lib/posts";
 
 export async function getStaticPaths() {
@@ -23,7 +23,7 @@ const { tag, posts } = Astro.props;
 
   <div class="mx-auto max-w-[40rem] px-6 pt-12 pb-20 sm:pt-20">
     <a href="/blog" class="quiet inline-flex items-center gap-1.5 text-sm" data-reveal style="--i: 0">
-      <Icon name="arrow-left" size={14} />
+      <ArrowLeft size={14} stroke-width={1.75} aria-hidden="true" />
       Writing
     </a>
 

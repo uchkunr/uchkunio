@@ -1,7 +1,7 @@
 ---
 export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import Icon from "@/components/Icon.astro";
+import { ArrowLeft } from "@lucide/astro";
 ---
 
 <BaseLayout title="Not found">
@@ -14,7 +14,7 @@ import Icon from "@/components/Icon.astro";
       The page may have moved, or the link was wrong.
     </p>
     <a href="/" class="quiet mt-8 inline-flex items-center gap-1.5 text-sm" data-reveal style="--i: 3">
-      <Icon name="arrow-left" size={14} />
+      <ArrowLeft size={14} stroke-width={1.75} aria-hidden="true" />
       Home
     </a>
   </div>

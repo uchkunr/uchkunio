@@ -3,7 +3,7 @@ export const prerender = true;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import PostList from "@/components/PostList.astro";
-import Icon from "@/components/Icon.astro";
+import { Search } from "@lucide/astro";
 import { getPosts, groupByYear } from "@/lib/posts";
 
 const posts = await getPosts();
@@ -26,7 +26,7 @@ const rare = tags.filter(([, n]) => n === 1).length;
     </header>
 
     <label class="search mt-8" data-reveal style="--i: 1">
-      <Icon name="search" size={15} />
+      <Search size={15} stroke-width={1.75} aria-hidden="true" />
       <input
         id="search"
         type="search"

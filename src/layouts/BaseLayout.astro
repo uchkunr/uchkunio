@@ -5,6 +5,7 @@ import SEOHead from "@/components/SEOHead.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Analytics from "@vercel/analytics/astro";
+import { Check, Copy } from "@lucide/astro";
 import "@/styles/global.css";
 
 interface Props {
@@ -48,6 +49,11 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       <slot />
     </main>
     <Footer />
+    <!-- Icons for the code copy button, which the layout script builds at runtime. -->
+    <template data-code-copy>
+      <Copy class="copy" size={14} stroke-width={1.75} aria-hidden="true" />
+      <Check class="ok" size={14} stroke-width={2} aria-hidden="true" />
+    </template>
     <!-- In <body>, not <head> as Vercel's docs show: it renders a custom element,
          and the HTML parser ends <head> at the first one it meets, pushing every
          later head tag (including the stylesheet) into <body>. -->
@@ -233,10 +239,8 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
   });
 
   // ── Code blocks and tables ──────────────────────────────────────────
-  const COPY =
-    '<svg class="copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
-  const CHECK =
-    '<svg class="ok" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>';
+  // Copy and check icons, rendered once by the layout as Lucide SVGs.
+  const COPY_ICONS = document.querySelector<HTMLTemplateElement>("[data-code-copy]")?.innerHTML ?? "";
 
   function initProse() {
     document.querySelectorAll<HTMLPreElement>(".prose pre.astro-code").forEach((pre) => {
@@ -244,7 +248,7 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
       const lang = pre.dataset.language === "plaintext" ? "text" : (pre.dataset.language ?? "");
       const figure = document.createElement("figure");
       figure.className = "code";
-      figure.innerHTML = `<div class="code-bar"><span>${lang}</span><button type="button" class="code-copy" data-copy aria-label="Copy code">${COPY}${CHECK}</button></div>`;
+      figure.innerHTML = `<div class="code-bar"><span>${lang}</span><button type="button" class="code-copy" data-copy aria-label="Copy code">${COPY_ICONS}</button></div>`;
       pre.replaceWith(figure);
       figure.append(pre);
     });

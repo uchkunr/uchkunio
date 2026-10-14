@@ -77,7 +77,7 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | Header: nav, theme toggle, reading title, progress line | `src/components/Header.astro` |
 | Footer: RSS and source link | `src/components/Footer.astro` |
 | Post rows shared by home, blog, and tag pages | `src/components/PostList.astro` |
-| Inline SVG icons | `src/components/Icon.astro` |
+| Icons | `@lucide/astro` components, inlined as SVG at build time (`stroke-width={1.75}`, `aria-hidden="true"`) |
 | Meta, Open Graph, Twitter tags | `src/components/SEOHead.astro` |
 | Breadcrumb JSON-LD | `src/components/Breadcrumbs.astro` |
 | Vercel Web Analytics | `<Analytics />` from `@vercel/analytics/astro` at the end of `<body>` in `BaseLayout.astro` |
@@ -87,7 +87,7 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | OG image templates | `src/pages/og.png.ts` (default), `src/pages/og/[...slug].png.ts` (posts); shared size, palette, font and rendering in `src/lib/og.ts` |
 | Static assets, favicons, search engine verification files | `public/` |
 
-Nav links are written directly in `Header.astro`. Keep `site.ts`, `Icon.astro`, and `src/components/` free of dead exports: delete code when its last caller goes away instead of keeping it for later.
+Nav links are written directly in `Header.astro`. Keep `site.ts` and `src/components/` free of dead exports: delete code when its last caller goes away instead of keeping it for later.
 
 ## Content
 
