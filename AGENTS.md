@@ -126,11 +126,27 @@ Writing style for posts and docs:
 
 ## Writing a post
 
-The playbook every post on the site followed. Each post has an Uzbek original, English and Russian translations, two sketches (one of them animated), and only numbers that were measured.
+Posts are written together with the author: the author brings the story, the agent writes it up as a senior writer. Each post has an Uzbek original, English and Russian translations, and only numbers that were measured.
 
-### 1. Pick one concept
+### 1. Start from the author's brief
 
-One problem, one mechanism, one fix. Good sources: the author's own projects (github.com/uchkunr) and backend fundamentals whose effect can be measured (locks, indexes, pools, shutdown, the event loop). If a claim cannot be shown with a command and its output, it does not go in.
+The author sends a brief in this shape:
+
+```text
+role: senior writer
+title: Transactional outbox: microservicelar o'rtasida real time chat
+description:
+Muammo: what had to work, in the author's system (services, tables, broker)
+Yechim: what the author did: the first version, how it broke, the fix
+```
+
+The brief is the post's skeleton. Continue the author's draft rather than starting a new one:
+
+- Keep the author's story, voice (first person: "men ... qildim") and names: services, schemas, tables, the broker. Write from the brief, not from earlier posts on the site.
+- Fix what the draft gets wrong or leaves out: why the first version failed (the mechanism, not just the symptom), edge cases (duplicates, ordering, outages, deploys), and the honest limits of the fix.
+- Add real code examples in the author's stack (TypeScript, Node.js, Postgres, and the broker named in the brief): the first version, the fix, and every part a reader needs to run it.
+- Do not invent facts about the author's system. When a detail has to be assumed (a library, a table, a component the brief does not mention), make the assumption and list it for the author with the draft.
+- One problem, one mechanism, one fix. If a claim cannot be shown with a command and its output, it does not go in.
 
 ### 2. Measure before writing
 
@@ -150,10 +166,10 @@ Never invent an output. Reproduce every claim and paste what the machine printed
 ### 3. Write the Uzbek original
 
 - File: `src/content/blog/<slug>.md`, slug in English (`keyset-pagination`).
-- Title states the subject and the result plainly: "Keyset pagination: OFFSET'dan 1800 barobar tezroq sahifalash". No teasers, metaphors or questions.
+- Title: the author's, with only spelling fixed ("microservice'lar", "real-time"). Without one, state the subject and the result plainly: "Keyset pagination: OFFSET'dan 1800 barobar tezroq sahifalash". No teasers, metaphors or questions.
 - Excerpt: two sentences, the problem and the measured result.
 - Literary, clear Uzbek (Latin, straight apostrophes): full connected sentences ("Shu sababli", "Natijada", "Biroq"), no slang, no fragments. Technical terms stay in English where Uzbek engineers use them (lock, pool, worker, commit).
-- Shape: the problem with real code, the measurement, why it happens, the fix with its measurement, then two to four rules. About 350 to 500 words of prose, five to ten code blocks.
+- Shape: the author's context (Muammo), the first version with its code, how it failed (measured), why, the fix with its code (Yechim), its measurement, then two to four rules. About 500 to 900 words of prose, five to twelve code blocks.
 - Outputs go in ```` ```text ```` blocks or as `// [{ t: "string" }]` comments next to the call.
 - Be honest about trade-offs and limits of the measurement (CPU limits, slowed-down animations, what was simplified).
 - Dates: every post has a distinct date, in the order posts were written, never in the future. Adding a post may mean spreading the existing dates again (same date in all three languages).
