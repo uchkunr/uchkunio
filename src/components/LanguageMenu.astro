@@ -1,0 +1,43 @@
+---
+import { Check, ChevronDown, Languages } from "@lucide/astro";
+import { LOCALE_NAMES, localeOf, postUrl, type Post } from "@/lib/posts";
+
+interface Props {
+  post: Post;
+  /** Every language the post exists in, Uzbek first. */
+  translations: Post[];
+}
+
+const { post, translations } = Astro.props;
+const current = localeOf(post);
+---
+
+<!-- A <details> opens and closes without script and with the keyboard; the layout
+     script only closes it on an outside click or Escape. -->
+<details class="lang-menu" data-lang-menu>
+  <summary aria-label={`Language: ${LOCALE_NAMES[current]}`}>
+    <Languages size={15} stroke-width={1.75} aria-hidden="true" />
+    <span>{LOCALE_NAMES[current]}</span>
+    <ChevronDown size={13} stroke-width={1.75} class="lang-chevron" aria-hidden="true" />
+  </summary>
+  <ul class="lang-list">
+    {
+      translations.map((t) => {
+        const locale = localeOf(t);
+        return (
+          <li>
+            <a
+              href={postUrl(t)}
+              hreflang={locale}
+              lang={locale}
+              aria-current={locale === current ? "page" : undefined}
+            >
+              {LOCALE_NAMES[locale]}
+              {locale === current && <Check size={14} stroke-width={2} aria-hidden="true" />}
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
+</details>

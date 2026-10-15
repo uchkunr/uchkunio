@@ -1,14 +1,11 @@
 ---
 export const prerender = true;
 import PostLayout from "@/layouts/PostLayout.astro";
-import { getPosts, slugOf } from "@/lib/posts";
+import { postPaths } from "@/lib/posts";
 
-export async function getStaticPaths() {
-  const posts = await getPosts();
-  return posts.map((post, i) => ({
-    params: { slug: slugOf(post) },
-    props: { post, newer: posts[i - 1] ?? null, older: posts[i + 1] ?? null },
-  }));
+// The Uzbek original: /blog/<slug>.
+export function getStaticPaths() {
+  return postPaths("uz");
 }
 
 const { post, newer, older } = Astro.props;

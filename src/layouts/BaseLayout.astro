@@ -16,6 +16,8 @@ interface Props {
   publishedDate?: string;
   tags?: string[];
   ogLocale?: string;
+  /** og:locale of the page's other language versions. */
+  ogLocaleAlternates?: string[];
   /** Other language versions of this page, emitted as hreflang links. */
   alternates?: { hreflang: string; href: string }[];
   /** BCP 47 language of the page content. The site chrome is English. */
@@ -207,6 +209,20 @@ const { headerTitle, lang = "en", ...seo } = Astro.props;
   document.addEventListener("click", (event) => {
     const toc = (event.target as Element).closest("[data-toc-rail]")?.closest("[data-toc]");
     toc?.classList.toggle("is-open");
+  });
+
+  // ── Language menu: a <details>; close it on an outside click or Escape ──
+  document.addEventListener("click", (event) => {
+    document.querySelectorAll<HTMLDetailsElement>("[data-lang-menu][open]").forEach((menu) => {
+      if (!menu.contains(event.target as Node)) menu.open = false;
+    });
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const menu = document.querySelector<HTMLDetailsElement>("[data-lang-menu][open]");
+    if (!menu) return;
+    menu.open = false;
+    menu.querySelector("summary")?.focus();
   });
 
   // ── Back to top ─────────────────────────────────────────────────────

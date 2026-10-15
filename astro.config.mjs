@@ -11,7 +11,19 @@ export default defineConfig({
   trailingSlash: "never",
   output: "server",
   adapter: vercel(),
-  integrations: [sitemap()],
+  // Posts are written in Uzbek at /blog/<slug>; translations live under /en/ and /ru/.
+  // Keep in sync with LOCALES in src/lib/posts.ts.
+  i18n: {
+    locales: ["uz", "en", "ru"],
+    defaultLocale: "uz",
+    routing: { prefixDefaultLocale: false },
+  },
+  // Pairs /blog/<slug> with /en/blog/<slug> and /ru/blog/<slug> as hreflang alternates.
+  integrations: [
+    sitemap({
+      i18n: { defaultLocale: "uz", locales: { uz: "uz", en: "en", ru: "ru" } },
+    }),
+  ],
   // Fetched at build time and served from this origin. Astro also generates
   // metric-matched fallbacks so text does not shift when the real font lands.
   fonts: [

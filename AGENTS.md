@@ -44,8 +44,8 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | --- | --- | --- |
 | `/` | `src/pages/index.astro` | Bio, latest posts, links. Person and WebSite JSON-LD |
 | `/blog` | `src/pages/blog/index.astro` | Posts grouped by year, client-side search (`/` focuses it) and tag filter; both combine and live in the URL (`?q=`, `?tag=`) |
-| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page (Uzbek original): title moves into the header on scroll, progress line, TOC rail from `md` up, back-to-top button, code copy, prev/next, language links |
-| `/en/blog/[slug]`, `/ru/blog/[slug]` | `src/pages/[lang]/blog/[slug].astro` | Translated post page, same `PostLayout`, prev/next within the language |
+| `/blog/[slug]` | `src/pages/blog/[slug].astro` | Post page (Uzbek original): title moves into the header on scroll, progress line, TOC rail from `md` up, back-to-top button, code copy, prev/next, language menu |
+| `/en/blog/[slug]`, `/ru/blog/[slug]` | `src/pages/en/blog/[slug].astro`, `src/pages/ru/blog/[slug].astro` | Translated post page, same `PostLayout`, prev/next within the language |
 | `/blog/tags/[tag]` | `src/pages/blog/tags/[tag].astro` | Posts filtered by tag |
 | `/og.png` | `src/pages/og.png.ts` | 1200x630 default OG image for every page that isn't a post: avatar, name, role |
 | `/og/[...slug].png` | `src/pages/og/[...slug].png.ts` | 1200x630 OG image per post and language (`/og/<slug>.png`, `/og/en/<slug>.png`) |
@@ -69,7 +69,8 @@ Astro 7 runs `astro dev` as a background process. If `pnpm dev` reports "Another
 | Links on the home page and JSON-LD `sameAs` | `src/config/site.ts` (`SOCIAL_LINKS`) |
 | Home page copy | `src/pages/index.astro` (bio paragraphs are inline) |
 | Blog post | `src/content/blog/<slug>.md` (Uzbek), `src/content/blog/{en,ru}/<slug>.md` (translations) |
-| Post page markup, language links, `hreflang` | `src/layouts/PostLayout.astro` |
+| Post page markup, `hreflang`, `og:locale:alternate` | `src/layouts/PostLayout.astro` |
+| Language menu above a post (O'zbekcha, English, Русский) | `src/components/LanguageMenu.astro` |
 | Locales, slugs, post URLs, translations lookup | `src/lib/posts.ts` (`LOCALES`, `localeOf`, `slugOf`, `postUrl`, `getTranslations`) |
 | Frontmatter schema | `src/content.config.ts` |
 | Fonts | `astro.config.mjs` (`fonts`), loaded with `<Font>` in `BaseLayout.astro` |
@@ -113,7 +114,8 @@ Rules:
 - Reading time is computed at 230 words per minute from the raw body.
 - Changing a slug changes a public URL. Treat it as a breaking change.
 - **Translations.** Posts are written in Uzbek; a translation is the same filename under `en/` or `ru/` (`src/content/blog/en/<slug>.md` serves `/en/blog/<slug>`). Frontmatter is identical except `title` and `excerpt`; code blocks stay identical except human-language comments and output text; links to other posts point to the same language. `getPosts()` returns Uzbek posts only, so lists, tags and RSS never mix languages. The site chrome is English and is not translated.
-- `<html lang>` and `og:locale` follow the post's language; every post page emits `hreflang` alternates with `x-default` pointing at the Uzbek original.
+- **i18n routing** is Astro's own (`i18n` in `astro.config.mjs`): locales `uz`, `en`, `ru`, `defaultLocale: "uz"`, `prefixDefaultLocale: false`. Each translated locale has its own folder in `src/pages/` (`en/`, `ru/`), whose name must match the locale code; post URLs come from `getRelativeLocaleUrl()` inside `postUrl()`. `LOCALES` in `src/lib/posts.ts` must stay in sync with the config.
+- `<html lang>` and `og:locale` follow the post's language, with `og:locale:alternate` for the other versions; every post page emits `hreflang` alternates with `x-default` pointing at the Uzbek original, and the sitemap (`@astrojs/sitemap` with `i18n`) lists the same pairs.
 - **Sketches** live in `public/sketches/` and are generated; see [Sketches](#sketches).
 - **Media.** Recordings live in `public/media/`. Convert GIFs over a few hundred KB to MP4 (`ffmpeg ... -c:v libx264 -crf 26 -movflags +faststart`) with a poster JPEG, and embed them as `<video autoplay loop muted playsinline>`; the layout script pauses them and shows controls under reduced motion.
 - One font for every language: Jost covers Uzbek (including `oʻ`/`gʻ`), English and Russian, on pages and OG images alike. A replacement must cover Cyrillic too.
@@ -201,7 +203,7 @@ grep -cP '[\x{2013}\x{2014}]' src/content/blog/*.md src/content/blog/*/*.md   # 
 pnpm build                                                                     # schema, routes, OG images
 ```
 
-Then open the post in all three languages in a browser: sketches render and animate, dark mode inverts them, the language links work, and `dist/client/og/ru/<slug>.png` shows Cyrillic.
+Then open the post in all three languages in a browser: sketches render and animate, dark mode inverts them, the language menu switches between them, and `dist/client/og/ru/<slug>.png` shows Cyrillic.
 
 ### 7. Commit
 

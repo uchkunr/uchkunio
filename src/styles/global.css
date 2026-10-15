@@ -414,6 +414,76 @@ html[data-vt="theme"]::view-transition-new(root) {
 
 /* ── Post page ─────────────────────────────────────────────────────── */
 
+/* Language menu above a post: the current language, and the others on click. */
+.lang-menu {
+  position: relative;
+}
+.lang-menu summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--fg-2);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.lang-menu summary::-webkit-details-marker {
+  display: none;
+}
+.lang-menu summary:hover,
+.lang-menu[open] summary {
+  color: var(--fg);
+  border-color: var(--fg-3);
+}
+.lang-chevron {
+  transition: transform 0.2s var(--swift);
+}
+.lang-menu[open] .lang-chevron {
+  transform: rotate(180deg);
+}
+.lang-list {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 20;
+  min-width: 10rem;
+  padding: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.25);
+  list-style: none;
+}
+.lang-list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--fg-2);
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+.lang-list a:hover,
+.lang-list a:focus-visible {
+  color: var(--fg);
+  background: var(--fill);
+}
+.lang-list a[aria-current="page"] {
+  color: var(--fg);
+  font-weight: 500;
+}
+
 /* Table of contents: a rail of dashes on the right edge, one per heading, that opens into
    the full list on hover, keyboard focus or a tap. The links stay focusable while the
    panel is closed (opacity, not visibility), so tabbing into one opens it. */

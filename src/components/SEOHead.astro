@@ -10,6 +10,7 @@ interface Props {
   publishedDate?: string;
   tags?: string[];
   ogLocale?: string;
+  ogLocaleAlternates?: string[];
   alternates?: { hreflang: string; href: string }[];
 }
 
@@ -22,6 +23,7 @@ const {
   publishedDate,
   tags,
   ogLocale = SITE.locale,
+  ogLocaleAlternates = [],
   alternates = [],
 } = Astro.props;
 
@@ -62,6 +64,7 @@ const ogImageUrl = new URL(ogImage, SITE.url).href;
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:locale" content={ogLocale} />
+{ogLocaleAlternates.map((alt) => <meta property="og:locale:alternate" content={alt} />)}
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />

@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
 
 export type Post = CollectionEntry<"blog">;
 
@@ -7,6 +8,7 @@ export type Post = CollectionEntry<"blog">;
  * filename, so their ids are "en/<slug>" and "ru/<slug>". Lists, tags and RSS show the
  * Uzbek originals only; a post page links to its translations.
  */
+// Same order and codes as i18n.locales in astro.config.mjs.
 export const LOCALES = ["uz", "en", "ru"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "uz";
@@ -23,15 +25,24 @@ export function slugOf(post: Post): string {
   return localeOf(post) === DEFAULT_LOCALE ? post.id : post.id.slice(post.id.indexOf("/") + 1);
 }
 
+/** /blog/<slug> for Uzbek, /en/blog/<slug> and /ru/blog/<slug> for translations. */
 export function postUrl(post: Post): string {
-  const locale = localeOf(post);
-  return locale === DEFAULT_LOCALE ? `/blog/${slugOf(post)}` : `/${locale}/blog/${slugOf(post)}`;
+  return getRelativeLocaleUrl(localeOf(post), `blog/${slugOf(post)}`);
 }
 
 /** Posts in one language, newest first. Dates are ISO strings, so they sort lexically. */
 export async function getPosts(locale: Locale = DEFAULT_LOCALE): Promise<Post[]> {
   const posts = await getCollection("blog", (post) => localeOf(post) === locale);
   return posts.sort((a, b) => b.data.date.localeCompare(a.data.date));
+}
+
+/** getStaticPaths for a post page in one language, with its newer and older neighbours. */
+export async function postPaths(locale: Locale) {
+  const posts = await getPosts(locale);
+  return posts.map((post, i) => ({
+    params: { slug: slugOf(post) },
+    props: { post, newer: posts[i - 1] ?? null, older: posts[i + 1] ?? null },
+  }));
 }
 
 /** Every language a post exists in, in LOCALES order. */
