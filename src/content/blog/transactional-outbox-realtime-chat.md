@@ -1,6 +1,6 @@
 ---
 title: "Transactional outbox: microservice'lar o'rtasida real-time chat"
-date: "2026-10-14"
+date: "2026-10-13"
 excerpt: "Ikki servis o'rtasidagi chat xabarlari BullMQ orqali o'tganda Redis uzilishi va deploy bir vaqtga to'g'ri kelsa, 10 tadan 2 tasi yo'qolardi. Transactional outbox bilan xuddi shu sinovda 10 tadan 10 tasi yetib bordi, kechikish esa 10 ms atrofida qoldi."
 tags:
   - architecture

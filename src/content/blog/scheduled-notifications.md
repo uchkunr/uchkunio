@@ -1,6 +1,6 @@
 ---
 title: "Belgilangan vaqtda notification yuborish"
-date: "2026-10-15"
+date: "2026-10-14"
 excerpt: "Har daqiqada ishlaydigan cron 1 mln dori ichidan bir daqiqalik eslatmalarni topish uchun har safar 130 ms dan ortiq vaqt sarflardi, deploy paytida o'tkazib yuborilgan daqiqa esa eslatmani butunlay yo'qotardi. BullMQ job scheduler bilan bazaga takroriy so'rov yo'qoldi, worker 30 soniya o'chiq turgan paytda vaqti kelgan 1000 ta eslatmaning birortasi ham yo'qolmadi."
 tags:
   - bullmq

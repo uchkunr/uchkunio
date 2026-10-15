@@ -1,6 +1,6 @@
 ---
 title: "Sending notifications at a scheduled time"
-date: "2026-10-15"
+date: "2026-10-14"
 excerpt: "A cron job running every minute spent more than 130 ms each time to find one minute's reminders among 1 million pills, and a minute skipped during a deploy lost those reminders for good. With a BullMQ job scheduler the repeated query against the database went away, and while the worker was down for 30 seconds, not one of the 1,000 reminders that fell due was lost."
 tags:
   - bullmq
