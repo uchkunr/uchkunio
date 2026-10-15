@@ -181,7 +181,11 @@ const { rows } = await pool.query(
   `SELECT p.id, to_char(p.take_at, 'HH24:MI') AS take_at, u.timezone
      FROM pills p JOIN users u ON u.id = p.user_id`,
 );
-for (const pill of rows) await schedulePill({ id: pill.id, takeAt: pill.take_at }, pill.timezone);
+for (let i = 0; i < rows.length; i += 500) {
+  await Promise.all(
+    rows.slice(i, i + 500).map((p) => schedulePill({ id: p.id, takeAt: p.take_at }, p.timezone)),
+  );
+}
 ```
 
 ## Xulosa
