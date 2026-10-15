@@ -169,7 +169,8 @@ Never invent an output. Reproduce every claim and paste what the machine printed
 - Title: the author's, with only spelling fixed ("microservice'lar", "real-time"). Without one, state the subject and the result plainly: "Keyset pagination: OFFSET'dan 1800 barobar tezroq sahifalash". No teasers, metaphors or questions.
 - Excerpt: two sentences, the problem and the measured result.
 - Literary, clear Uzbek (Latin, straight apostrophes): full connected sentences ("Shu sababli", "Natijada", "Biroq"), no slang, no fragments. Technical terms stay in English where Uzbek engineers use them (lock, pool, worker, commit).
-- Shape: the author's context (Muammo), the first version with its code, how it failed (measured), why, the fix with its code (Yechim), its measurement, then two to four rules. About 500 to 900 words of prose, five to twelve code blocks.
+- Shape: the author's context (Muammo), the first version with its code, how it failed (measured), why, the fix with its code (Yechim), its measurement, then a closing `## Xulosa` section of two to four takeaways (never "Qoidalar"). About 500 to 900 words of prose, five to twelve code blocks.
+- Reference post for structure and voice: `src/content/blog/transactional-outbox-realtime-chat.md`. Sections follow the story: the context without a heading, `## Birinchi versiya: ...`, `## Ikkinchi versiya: ...`, a section per part of the fix, `## Natija` with the measured output, `## Xulosa`.
 - Outputs go in ```` ```text ```` blocks or as `// [{ t: "string" }]` comments next to the call.
 - Be honest about trade-offs and limits of the measurement (CPU limits, slowed-down animations, what was simplified).
 - Dates: every post has a distinct date, in the order posts were written, never in the future. Adding a post may mean spreading the existing dates again (same date in all three languages).

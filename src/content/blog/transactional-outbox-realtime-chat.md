@@ -247,7 +247,7 @@ Real-time uchun kechikish ham muhim, shuning uchun 100 ta xabarni har 100 ms da 
 
 O'lchovlar Windows'dagi Docker Desktop'da, bitta mashinada o'tkazildi, shu sababli natijalar tarqoq. Biroq xulosa aniq: outbox chatni foydalanuvchi sezadigan darajada sekinlashtirmadi. Uni real-time qilib turgan narsa esa `NOTIFY`: busiz relay kechikishining medianasi yarim soniyaga chiqadi.
 
-## Qoidalar
+## Xulosa
 
 - Xabar va uning event'i bitta tranzaksiyada yoziladi. Brokerga faqat relay yozadi.
 - Relay hech narsani xotirada ushlab turmaydi: `enableOfflineQueue: false`, xato bo'lsa rollback. Xotirada kutib turgan narsa birinchi deploy'da yo'qoladi.
