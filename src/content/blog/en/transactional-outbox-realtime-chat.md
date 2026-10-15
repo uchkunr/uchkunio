@@ -1,6 +1,6 @@
 ---
 title: "Transactional outbox: real-time chat between microservices"
-date: "2026-10-15"
+date: "2026-10-14"
 excerpt: "When chat messages between two services went through BullMQ, a Redis outage that coincided with a deploy lost 2 messages out of 10. With a transactional outbox, the same test delivered 10 out of 10, and latency stayed around 10 ms."
 tags:
   - architecture

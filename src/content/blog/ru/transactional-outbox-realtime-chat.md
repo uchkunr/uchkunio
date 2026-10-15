@@ -1,6 +1,6 @@
 ---
 title: "Transactional outbox: real-time чат между микросервисами"
-date: "2026-10-15"
+date: "2026-10-14"
 excerpt: "Когда сообщения чата между двумя сервисами шли через BullMQ, сбой Redis, совпавший с деплоем, терял 2 сообщения из 10. С transactional outbox в том же тесте дошли 10 из 10, а задержка осталась около 10 мс."
 tags:
   - architecture
